@@ -1,10 +1,10 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const mongoose = require('mongoose');
-const Producto = require('./app/Producto');
+import express from "express";
+import mongoose from "mongoose"
+import bodyParser from "body-parser"
+import Producto from "./app/Producto";
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 // Configuración de bodyParser para parsear las solicitudes JSON
 app.use(bodyParser.json());
@@ -16,10 +16,12 @@ mongoose.connect('mongodb+srv://nacho98nacho98:dsw123@cluster0.z5xdoug.mongodb.n
           useUnifiedTopology: true
 }).then(() => {
           console.log("Conexión a la base de datos exitosa");
-          console.log('Estamo donde queremo')
 }).catch((err) => {
           console.error("Error al conectar a la base de datos:", err);
 });
+
+
+//Persistencia en la bd
 const producto = new Producto({
           // Aquí asigna los valores para los campos del modelo
           // Ejemplo:
