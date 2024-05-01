@@ -1,8 +1,7 @@
-import express from "express";
-import mongoose from "mongoose"
-import bodyParser from "body-parser"
-import Producto from "./app/Producto";
-
+const express = require("express");
+const mongoose = require("mongoose");
+const bodyParser = require("body-parser");
+const Producto = require("./models/Producto");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -43,7 +42,10 @@ producto.save()
           });
 
 
+
+
+module.exports = app
 // Iniciar el servidor
-app.listen(PORT, () => {
-          console.log(`Servidor iniciado en el puerto ${PORT}`);
-});
+//app.listen(PORT, () => {
+//          console.log(`Servidor iniciado en el puerto ${PORT}`);
+//});
