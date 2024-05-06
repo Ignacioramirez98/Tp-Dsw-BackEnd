@@ -20,10 +20,9 @@ mongoose.connect('mongodb+srv://nacho98nacho98:dsw123@cluster0.z5xdoug.mongodb.n
 });
 
 
-//Persistencia en la bd
+//creacion de la instancia
 const producto = new Producto({
-          // Aquí asigna los valores para los campos del modelo
-          // Ejemplo:
+          // Aquí asigna los valores para los campos del model
           nombre: "test1",
           descripcion: "descripcion test1",
           importe_compra: 1,
@@ -42,10 +41,4 @@ producto.save()
           });
 
 
-
-
 module.exports = app
-// Iniciar el servidor
-//app.listen(PORT, () => {
-//          console.log(`Servidor iniciado en el puerto ${PORT}`);
-//});
