@@ -1,4 +1,4 @@
-GET http://localhost:3000/productos
+GET http://localhost:3000/pnoroductos
 ###
 GET http://localhost:3000/productos/667864dc56d0ad959af0fa68
 ###
