@@ -1,0 +1,30 @@
+GET http://localhost:3000/productos
+###
+GET http://localhost:3000/productos/667864dc56d0ad959af0fa68
+###
+POST http://localhost:3000/productos
+Content-Type: application/json
+
+{
+          "nombre": "cotinovino",
+          "descripcion": "descripcion pruebaPost",
+          "importe_compra": 1,
+          "importe_venta": 2,
+          "stock": 5
+}
+###
+
+DELETE http://localhost:3000/productos/66786b99ee7fbf25b5820759
+
+###
+PUT http://localhost:3000/productos/66301be70e2069657ca2d9e6
+
+Content-Type: application/json
+
+{
+          "nombre": "ASDFASFD",
+          "descripcion": "descripcion",
+          "importe_compra": 5,
+          "importe_venta": 7,
+          "stock": 40
+}
