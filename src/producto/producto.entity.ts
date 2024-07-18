@@ -1,5 +1,4 @@
 import { ObjectId } from "mongodb";
-import crypto from 'node:crypto'
 
 export class Producto 
 {
