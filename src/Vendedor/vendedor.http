@@ -1,0 +1,44 @@
+
+### Obtener todos los vendedores
+GET http://localhost:3000/vendedores/
+
+### Obtener un vendedor
+GET http://localhost:3000/vendedores/669874787690bc5f60d711fd
+
+### Crear un nuevo vendedor
+POST http://localhost:3000/vendedores
+Content-Type: application/json
+
+{
+          "nombre": "Constanza",
+          "apellido": "Dominio",
+          "mail": "cotidominio@gmail.com",
+          "dni": "45681582",
+          "telefono": "3413457895",
+          "rol": "rol"
+}
+
+### Modificar un vendedor (completo)
+PUT http://localhost:3000/vendedores/669874787690bc5f60d711fd
+Content-Type: application/json
+
+{
+  "nombre": "Milton",
+  "apellido": "Sarkissian",
+  "mail": "miltonsarkissian@gmail.com",
+  "dni": "40618265",
+  "telefono": "3413456879",
+  "rol": "rol"
+}
+
+### Modificar un vendedor (parcial)
+PATCH http://localhost:3000/vendedores/669874787690bc5f60d711fd
+Content-Type: application/json
+
+{
+  "rol": "otro rol"
+}
+
+
+### Borrar un vendedor
+DELETE http://localhost:3000/vendedores/669878c25647790e562e97a5
