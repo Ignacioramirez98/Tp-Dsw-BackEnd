@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from "express"
-import { LocalidadRepository } from "./cliente.repository.js"
+import { ClienteRepository } from "./cliente.repository.js"
 import { Cliente } from "./cliente.entity.js"
 
-const repository = new LocalidadRepository()
+const repository = new ClienteRepository()
 
 function sanitizeLocalidadInput(req: Request, res: Response, next: NextFunction) {
     req.body.sanitizedInput = {
