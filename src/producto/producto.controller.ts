@@ -1,8 +1,20 @@
 import { Request, Response, NextFunction } from "express"
 import { ProductoRepository } from "./producto.repository.js"
 import { Producto } from "./producto.entity.js"
+import multer from 'multer';
 
 const repository = new ProductoRepository()
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+function uploadImage(req: Request, res: Response, next: NextFunction) {
+    upload.single('image')(req, res, (err) => {
+        if (err) {
+            return res.status(400).send({ message: 'Error uploading image', error: err });
+        }
+        next();
+    });
+}
 
 function sanitizeProductoInput(req: Request, res: Response, next: NextFunction) {
     req.body.sanitizedInput = {
@@ -34,19 +46,20 @@ async function findOne(req: Request, res: Response){
     res.json({data : producto})
 }
 
-async function add(req: Request, res: Response){
-    const input = req.body.sanitizedInput
+async function add(req: Request, res: Response) {
+    const input = req.body.sanitizedInput;
 
     const productoInput = new Producto(
         input.nombre,        
         input.descripcion,
         input.importe_compra,
         input.importe_venta,
-        input.stock
-    )
+        input.stock,
+        input.imagen // Incluye imagen si existe
+    );
 
-    const producto = await repository.add(productoInput)
-    return res.status(201).send({message: 'Producto creado', data: producto})
+    const producto = await repository.add(productoInput);
+    return res.status(201).send({message: 'Producto creado', data: producto});
 }
 
 async function update(req: Request, res: Response) {

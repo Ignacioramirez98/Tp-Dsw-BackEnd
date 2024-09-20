@@ -1,6 +1,17 @@
 import { ProductoRepository } from "./producto.repository.js";
 import { Producto } from "./producto.entity.js";
+import multer from 'multer';
 const repository = new ProductoRepository();
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+function uploadImage(req, res, next) {
+    upload.single('image')(req, res, (err) => {
+        if (err) {
+            return res.status(400).send({ message: 'Error uploading image', error: err });
+        }
+        next();
+    });
+}
 function sanitizeProductoInput(req, res, next) {
     req.body.sanitizedInput = {
         nombre: req.body.nombre,
@@ -29,7 +40,8 @@ async function findOne(req, res) {
 }
 async function add(req, res) {
     const input = req.body.sanitizedInput;
-    const productoInput = new Producto(input.nombre, input.descripcion, input.importe_compra, input.importe_venta, input.stock);
+    const productoInput = new Producto(input.nombre, input.descripcion, input.importe_compra, input.importe_venta, input.stock, input.imagen // Incluye imagen si existe
+    );
     const producto = await repository.add(productoInput);
     return res.status(201).send({ message: 'Producto creado', data: producto });
 }
