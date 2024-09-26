@@ -1,7 +1,11 @@
 import express from 'express';
+import cors from 'cors';
 import { productoRouter } from './Producto/producto.routes.js';
 import { vendedorRouter } from './Vendedor/vendedor.routes.js';
 const app = express();
+app.use(cors({
+    origin: 'http://localhost:4200'
+}));
 app.use(express.json());
 app.use('/productos', productoRouter);
 app.use('/vendedores', vendedorRouter);
