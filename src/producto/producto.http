@@ -3,7 +3,7 @@
 GET http://localhost:3000/productos/
 
 ### Obtener un producto
-GET http://localhost:3000/productos/669456b15ef6e6df19e153e2
+GET http://localhost:3000/productos/66953d05693baf397055b328
 
 ### Crear un nuevo producto
 POST http://localhost:3000/productos
@@ -18,7 +18,7 @@ Content-Type: application/json
 }
 
 ### Modificar un producto (completo)
-PUT http://localhost:3000/productos/669456b15ef6e6df19e153e2
+PUT http://localhost:3000/productos/66953d05693baf397055b328
 Content-Type: application/json
 
 {
@@ -30,7 +30,7 @@ Content-Type: application/json
 }
 
 ### Modificar un producto (parcial)
-PATCH http://localhost:3000/productos/669456b15ef6e6df19e153e2
+PATCH http://localhost:3000/productos/66953d05693baf397055b328
 Content-Type: application/json
 
 {
@@ -40,4 +40,4 @@ Content-Type: application/json
 
 
 ### Borrar un producto
-DELETE http://localhost:3000/productos/669456b15ef6e6df19e153e2
+DELETE http://localhost:3000/productos/66953d05693baf397055b328

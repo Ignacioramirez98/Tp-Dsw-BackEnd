@@ -1,0 +1,39 @@
+
+### Obtener todos los servicios
+GET http://localhost:3000/servicios/
+
+### Obtener un servicio
+GET http://localhost:3000/servicios/66fd74edc502625cc64a706f
+
+### Crear un nuevo servicio
+POST http://localhost:3000/servicios
+Content-Type: application/json
+
+{
+          "idServicio": "servicioPrueba",
+          "descripcion": "descripcionPrueba",
+          "importe_por_hora": 3000
+}
+
+### Modificar un servicio (completo)
+PUT http://localhost:3000/servicios/66fd74edc502625cc64a706f
+Content-Type: application/json
+
+{
+          "idServicio": "servicioModificado",
+          "descripcion": "descripcionModificada",
+          "importe_por_hora": 3500
+}
+
+### Modificar un servicio (parcial)
+PATCH http://localhost:3000/servicios/66fd74edc502625cc64a706f
+Content-Type: application/json
+
+{
+          "idServicio": "servicioModificadoConPath",
+          "descripcion": "descripcionModificadaConPath"
+}
+
+
+### Borrar un servicio
+DELETE http://localhost:3000/servicios/66fd74edc502625cc64a706f

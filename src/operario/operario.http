@@ -1,0 +1,45 @@
+
+### Obtener todos los operarios
+GET http://localhost:3000/operarios/
+
+### Obtener un operario
+GET http://localhost:3000/operarios/66fdcfd026b27f043244717f
+
+### Crear un nuevo operario
+POST http://localhost:3000/operarios
+Content-Type: application/json
+
+{
+          "nombre": "nombreOperarioPrueba",
+          "apellido": "apellidoPrueba",
+          "mail": "coti.com",
+          "dni": 44444444,
+          "telefono": 555,
+          "rol": "a"
+}
+
+### Modificar un operario (completo)
+PUT http://localhost:3000/operarios/66fdcfd026b27f043244717f
+Content-Type: application/json
+
+{
+          "nombre": "nombreModificado",
+          "apellido": "apellidoModificado",
+          "mail": "cotidom.com",
+          "dni": 44444000,
+          "telefono": 666,
+          "rol": "b"
+}
+
+### Modificar un operario (parcial)
+PATCH http://localhost:3000/operarios/66fdcfd026b27f043244717f
+Content-Type: application/json
+
+{
+          "nombre": "Milton",
+          "apellido": "Perez"
+}
+
+
+### Borrar un operario
+DELETE http://localhost:3000/operarios/66fdcfd026b27f043244717f

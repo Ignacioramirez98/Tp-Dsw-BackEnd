@@ -3,7 +3,7 @@
 GET http://localhost:3000/vendedores/
 
 ### Obtener un vendedor
-GET http://localhost:3000/vendedores/669874787690bc5f60d711fd
+GET http://localhost:3000/vendedores/669879065647790e562e97a6
 
 ### Crear un nuevo vendedor
 POST http://localhost:3000/vendedores
@@ -19,7 +19,7 @@ Content-Type: application/json
 }
 
 ### Modificar un vendedor (completo)
-PUT http://localhost:3000/vendedores/669874787690bc5f60d711fd
+PUT http://localhost:3000/vendedores/669879065647790e562e97a6
 Content-Type: application/json
 
 {
@@ -32,7 +32,7 @@ Content-Type: application/json
 }
 
 ### Modificar un vendedor (parcial)
-PATCH http://localhost:3000/vendedores/669874787690bc5f60d711fd
+PATCH http://localhost:3000/vendedores/669879065647790e562e97a6
 Content-Type: application/json
 
 {
@@ -41,4 +41,4 @@ Content-Type: application/json
 
 
 ### Borrar un vendedor
-DELETE http://localhost:3000/vendedores/669878c25647790e562e97a5
+DELETE http://localhost:3000/vendedores/669879065647790e562e97a6
