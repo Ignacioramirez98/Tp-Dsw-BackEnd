@@ -1,0 +1,44 @@
+
+### Obtener todas las ventas
+GET http://localhost:3000/ventas/
+
+### Obtener una venta
+GET http://localhost:3000/venta/66fd75a4c502625cc64a7070
+
+### Crear una nueva venta
+POST http://localhost:3000/venta
+Content-Type: application/json
+
+{
+          "estado": "Finalizada",
+          "fechaContacto": "15-08-24",
+          "fechaDeVenta": "03-09-24",
+          "fechaEntrega": "03-09-24",
+          "fechaCancelacion": "-",
+          "cantidad": "2"
+}
+
+### Modificar una venta (completo)
+PUT http://localhost:3000/venta/669874787690bc5f60d711fd
+Content-Type: application/json
+
+{
+  "estado": "En proceso",
+  "fechaContacto": "16-08-24",
+  "fechaDeVenta": "-",
+  "fechaEntrega": "-",
+  "fechaCancelacion": "-",
+  "cantidad": "1"
+}
+
+### Modificar una venta (parcial)
+PATCH http://localhost:3000/venta/669874787690bc5f60d711fd
+Content-Type: application/json
+
+{
+  "cantidad": "6"
+}
+
+
+### Borrar una venta
+DELETE http://localhost:3000/venta/669878c25647790e562e97a5
