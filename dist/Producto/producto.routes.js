@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { sanitizeProductoInput, findAll, findOne, add, update, remove } from './producto.controller.js';
+import { sanitizeProductoInput, findAll, findOne, add, update, remove } from '../Producto/producto.controller.js';
 export const productoRouter = Router();
 productoRouter.get('/', findAll);
 productoRouter.get('/:id', findOne);

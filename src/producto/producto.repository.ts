@@ -1,5 +1,5 @@
 import { Repository } from "../shared/repository.js"
-import { Producto } from "./producto.entity.js"
+import { Producto } from "../Producto/producto.entity.js"
 import { db } from '../shared/db/conn.js'
 import { ObjectId } from "mongodb"
 

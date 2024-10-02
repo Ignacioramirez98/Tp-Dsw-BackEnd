@@ -2,7 +2,7 @@
 import express from 'express'
 import cors from 'cors'
 import multer from 'multer';
-import { productoRouter } from './producto/producto.routes.js'
+import { productoRouter } from './Producto/producto.routes.js'
 import { vendedorRouter } from './Vendedor/vendedor.routes.js'
 import { localidadRouter } from './localidad/localidad.routes.js'
 import { clienteRouter } from './cliente/cliente.routes.js'

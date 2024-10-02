@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express"
-import { ProductoRepository } from "./producto.repository.js"
-import { Producto } from "./producto.entity.js"
+import { ProductoRepository } from "../Producto/producto.repository.js"
+import { Producto } from "../Producto/producto.entity.js"
 import multer from 'multer';
 
 const repository = new ProductoRepository()
