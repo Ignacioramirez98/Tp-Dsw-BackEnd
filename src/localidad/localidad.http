@@ -1,37 +1,37 @@
 
-### Obtener todos los localidades
+### Obtener todas las localidades
 GET http://localhost:3000/localidades/
 
-### Obtener un producto
-GET http://localhost:3000/localidades/669456b15ef6e6df19e153e2
+### Obtener una localidad
+GET http://localhost:3000/localidades/66fc0fabab7a3de70a7bd902
 
-### Crear un nuevo producto
+### Crear una nueva localidad
 POST http://localhost:3000/localidades
 Content-Type: application/json
 
 {
           "nombre": "Santa_fe",
-          "codigo_postal":"2000",
+          "codigo_postal":"2000"
 }
 
-### Modificar un producto (completo)
-PUT http://localhost:3000/localidades/669456b15ef6e6df19e153e2
+### Modificar una localidad (completa)
+PUT http://localhost:3000/localidades/66fc0fabab7a3de70a7bd902
 Content-Type: application/json
 
 {
-          "nombre": "Santa_fe_mod",
-          "codigo_postal":"2001",
+          "nombre": "Cordoba",
+          "codigo_postal":"2001"
 }
 
-### Modificar un producto (parcial)
-PATCH http://localhost:3000/localidades/669456b15ef6e6df19e153e2
+### Modificar una localidad (parcial)
+PATCH http://localhost:3000/localidades/66fc0fabab7a3de70a7bd902
 Content-Type: application/json
 
 {
-          "nombre": "Santa_fe_mod_path",
-          "codigo_postal":"2002_mod_path",
+          "nombre": "Cordoba",
+          "codigo_postal":"2002"
 }
 
 
-### Borrar un producto
-DELETE http://localhost:3000/localidades/669456b15ef6e6df19e153e2
+### Borrar una localidad
+DELETE http://localhost:3000/localidades/66fc0fabab7a3de70a7bd902

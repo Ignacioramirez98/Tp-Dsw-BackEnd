@@ -1,0 +1,52 @@
+
+### Obtener todos los clientes
+GET http://localhost:3000/clientes/
+
+### Obtener un cliente
+GET http://localhost:3000/clientes/
+
+### Crear un nuevo cliente
+POST http://localhost:3000/clientes
+Content-Type: application/json
+
+{
+          "nombre": "Ignacio",
+          "apellido":"Ramirez",
+          "dni":"111111111",
+          "mail":"ig@com.ar",
+          "telefono":"111111111",
+          "direccion":"calle falsa 123",
+          "razon_social":"Mesa 12"
+}
+
+### Modificar un cliente (completo)
+PUT http://localhost:3000/clientes/
+Content-Type: application/json
+
+{
+          "nombre": "Constanza",
+          "apellido":"Dominio",
+          "dni":"22222222",
+          "mail":"co@com.ar",
+          "telefono":"22222222",
+          "direccion":"calle falsa 144",
+          "razon_social":"Mesa 10"
+}
+
+### Modificar un cliente (parcial)
+PATCH http://localhost:3000/clientes/
+Content-Type: application/json
+
+{
+          "nombre": "Milton",
+          "apellido":"Sarkissian",
+          "dni":"111111111",
+          "mail":"ig@test.com.ar",
+          "telefono":"111111111",
+          "direccion":"calle falsa 123",
+          "razon_social":"Mesa 14"
+}
+
+
+### Borrar un cliente
+DELETE http://localhost:3000/clientes/
