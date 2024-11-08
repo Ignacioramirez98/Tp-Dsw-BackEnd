@@ -1,5 +1,6 @@
-import { VentaRepository } from "./venta.repository.js";
-import { Venta } from "./venta.entity.js";
+import { VentaRepository } from "../venta/venta.repository.js";
+import { Venta } from "../venta/venta.entity.js";
+import { ObjectId } from "mongodb"; // Importar ObjectId para la validación
 const repository = new VentaRepository();
 function sanitizeVentaInput(req, res, next) {
     req.body.sanitizedInput = {
@@ -17,14 +18,26 @@ function sanitizeVentaInput(req, res, next) {
     });
     next();
 }
+// Función para validar y convertir el id en ObjectId
+function validateAndConvertId(id) {
+    if (ObjectId.isValid(id)) {
+        return new ObjectId(id); // Convertir a ObjectId
+    }
+    return null; // Retornar null si el id no es válido
+}
 async function findAll(req, res) {
     res.json({ data: await repository.findAll() });
 }
 async function findOne(req, res) {
-    const id = req.params.id;
-    const venta = await repository.findOne({ id });
+    const { id } = req.params;
+    // Validar y convertir el id
+    const ventaId = validateAndConvertId(id);
+    if (!ventaId) {
+        return res.status(400).send({ message: 'ID inválido' });
+    }
+    const venta = await repository.findOne({ _id: ventaId });
     if (!venta) {
-        return res.status(404).send({ message: 'Venta no encontrada' });
+        return res.status(404).send({ message: 'venta no encontrado' });
     }
     res.json({ data: venta });
 }
@@ -32,24 +45,34 @@ async function add(req, res) {
     const input = req.body.sanitizedInput;
     const ventaInput = new Venta(input.estado, input.fechaContacto, input.fechaDeVenta, input.fechaEntrega, input.fechaCancelacion, input.cantidad);
     const venta = await repository.add(ventaInput);
-    return res.status(201).send({ message: 'Venta creada', data: venta });
+    return res.status(201).send({ message: 'venta creado', data: venta });
 }
 async function update(req, res) {
-    const venta = await repository.update(req.params.id, req.body.sanitizedInput);
-    if (!venta) {
-        return res.status(404).send({ message: 'venta not found' });
+    const { id } = req.params;
+    // Validar y convertir el id
+    const ventaId = validateAndConvertId(id);
+    if (!ventaId) {
+        return res.status(400).send({ message: 'ID inválido' });
     }
-    return res.status(200).send({ message: 'venta updated successfully', data: venta });
+    // Actualizar el venta con los datos sanitizados
+    const venta = await repository.update(ventaId, req.body.sanitizedInput);
+    if (!venta) {
+        return res.status(404).send({ message: 'venta no encontrado' });
+    }
+    return res.status(200).send({ message: 'venta actualizado exitosamente', data: venta });
 }
 async function remove(req, res) {
-    const id = req.params.id;
-    const venta = await repository.delete({ id });
+    const { id } = req.params;
+    // Validar y convertir el id
+    const ventaId = validateAndConvertId(id);
+    if (!ventaId) {
+        return res.status(400).send({ message: 'ID inválido' });
+    }
+    const venta = await repository.delete({ _id: ventaId });
     if (!venta) {
-        res.status(404).send({ message: 'venta not found' });
+        return res.status(404).send({ message: 'venta no encontrado' });
     }
-    else {
-        res.status(200).send({ message: 'venta deleted successfully' });
-    }
+    return res.status(200).send({ message: 'venta eliminado exitosamente' });
 }
 export { sanitizeVentaInput, findAll, findOne, add, update, remove };
 //# sourceMappingURL=venta.controller.js.map

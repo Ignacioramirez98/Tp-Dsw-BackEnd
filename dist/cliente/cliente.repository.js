@@ -1,25 +1,24 @@
-import { db } from '../shared/db/conn.js';
-import { ObjectId } from "mongodb";
-const cliente = db.collection('cliente');
+import { Cliente } from './cliente.entity.js'; // Importar el modelo Cliente
 export class ClienteRepository {
+    // Método para buscar un solo cliente
+    async findOne(filter) {
+        return await Cliente.findOne(filter); // Usar el modelo Cliente
+    }
+    // Método para buscar todos los clientes
     async findAll() {
-        return await cliente.find().toArray();
+        return await Cliente.find(); // Usar el modelo Cliente
     }
-    async findOne(item) {
-        const _id = new ObjectId(item.id);
-        return (await cliente.findOne({ _id })) || undefined;
+    // Método para agregar un nuevo cliente
+    async add(cliente) {
+        return await Cliente.create(cliente); // Usar el modelo Cliente
     }
-    async add(item) {
-        item._id = (await cliente.insertOne(item)).insertedId;
-        return item;
+    // Método para actualizar un cliente
+    async update(id, updatedData) {
+        return await Cliente.findOneAndUpdate({ _id: id }, updatedData, { new: true });
     }
-    async update(id, item) {
-        const _id = new ObjectId(id);
-        return (await cliente.findOneAndUpdate({ _id }, { $set: item }, { returnDocument: 'after' })) || undefined;
-    }
-    async delete(item) {
-        const _id = new ObjectId(item.id);
-        return await (cliente.findOneAndDelete({ _id })) || undefined;
+    // Método para eliminar un cliente
+    async delete(filter) {
+        return await Cliente.findOneAndDelete(filter); // Usar el modelo Cliente
     }
 }
 //# sourceMappingURL=cliente.repository.js.map

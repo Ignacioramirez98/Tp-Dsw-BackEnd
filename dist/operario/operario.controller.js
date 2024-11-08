@@ -1,5 +1,6 @@
-import { OperarioRepository } from "./operario.repository.js";
-import { Operario } from "./operario.entity.js";
+import { OperarioRepository } from "../operario/operario.repository.js";
+import { Operario } from "../operario/operario.entity.js";
+import { ObjectId } from "mongodb"; // Importar ObjectId para la validación
 const repository = new OperarioRepository();
 function sanitizeOperarioInput(req, res, next) {
     req.body.sanitizedInput = {
@@ -17,14 +18,26 @@ function sanitizeOperarioInput(req, res, next) {
     });
     next();
 }
+// Función para validar y convertir el id en ObjectId
+function validateAndConvertId(id) {
+    if (ObjectId.isValid(id)) {
+        return new ObjectId(id); // Convertir a ObjectId
+    }
+    return null; // Retornar null si el id no es válido
+}
 async function findAll(req, res) {
     res.json({ data: await repository.findAll() });
 }
 async function findOne(req, res) {
-    const id = req.params.id;
-    const operario = await repository.findOne({ id });
+    const { id } = req.params;
+    // Validar y convertir el id
+    const operarioId = validateAndConvertId(id);
+    if (!operarioId) {
+        return res.status(400).send({ message: 'ID inválido' });
+    }
+    const operario = await repository.findOne({ _id: operarioId });
     if (!operario) {
-        return res.status(404).send({ message: 'Operario no encontrado' });
+        return res.status(404).send({ message: 'operario no encontrado' });
     }
     res.json({ data: operario });
 }
@@ -32,24 +45,34 @@ async function add(req, res) {
     const input = req.body.sanitizedInput;
     const operarioInput = new Operario(input.nombre, input.apellido, input.mail, input.dni, input.telefono, input.rol);
     const operario = await repository.add(operarioInput);
-    return res.status(201).send({ message: 'Operario creado', data: operario });
+    return res.status(201).send({ message: 'operario creado', data: operario });
 }
 async function update(req, res) {
-    const operario = await repository.update(req.params.id, req.body.sanitizedInput);
-    if (!operario) {
-        return res.status(404).send({ message: 'operario not found' });
+    const { id } = req.params;
+    // Validar y convertir el id
+    const operarioId = validateAndConvertId(id);
+    if (!operarioId) {
+        return res.status(400).send({ message: 'ID inválido' });
     }
-    return res.status(200).send({ message: 'operario updated successfully', data: operario });
+    // Actualizar el operario con los datos sanitizados
+    const operario = await repository.update(operarioId, req.body.sanitizedInput);
+    if (!operario) {
+        return res.status(404).send({ message: 'operario no encontrado' });
+    }
+    return res.status(200).send({ message: 'operario actualizado exitosamente', data: operario });
 }
 async function remove(req, res) {
-    const id = req.params.id;
-    const operario = await repository.delete({ id });
+    const { id } = req.params;
+    // Validar y convertir el id
+    const operarioId = validateAndConvertId(id);
+    if (!operarioId) {
+        return res.status(400).send({ message: 'ID inválido' });
+    }
+    const operario = await repository.delete({ _id: operarioId });
     if (!operario) {
-        res.status(404).send({ message: 'Operario not found' });
+        return res.status(404).send({ message: 'operario no encontrado' });
     }
-    else {
-        res.status(200).send({ message: 'Operario deleted successfully' });
-    }
+    return res.status(200).send({ message: 'operario eliminado exitosamente' });
 }
 export { sanitizeOperarioInput, findAll, findOne, add, update, remove };
 //# sourceMappingURL=operario.controller.js.map

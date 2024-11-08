@@ -1,25 +1,22 @@
-import { db } from '../shared/db/conn.js';
-import { ObjectId } from "mongodb";
-const vendedores = db.collection('vendedores');
-export class VendedorRepository {
+import Vendedor from "../Vendedor/vendedor.entity.js"; // Importas tanto el modelo como la interfaz
+class VendedorRepository {
     async findAll() {
-        return await vendedores.find().toArray();
+        return Vendedor.find(); // Aquí usas el modelo de Mongoose
     }
-    async findOne(item) {
-        const _id = new ObjectId(item.id);
-        return (await vendedores.findOne({ _id })) || undefined;
+    async findOne(filter) {
+        return Vendedor.findOne(filter); // Aquí también
     }
-    async add(item) {
-        item._id = (await vendedores.insertOne(item)).insertedId;
-        return item;
+    async add(vendedor) {
+        const newVendedor = new Vendedor(vendedor); // Creas una nueva instancia del modelo
+        return newVendedor.save(); // Guardamos en la base de datos
     }
-    async update(id, item) {
-        const _id = new ObjectId(id);
-        return (await vendedores.findOneAndUpdate({ _id }, { $set: item }, { returnDocument: 'after' })) || undefined;
+    async update(id, updateData) {
+        // Usamos findByIdAndUpdate con un ObjectId
+        return Vendedor.findByIdAndUpdate(id, updateData, { new: true });
     }
-    async delete(item) {
-        const _id = new ObjectId(item.id);
-        return await (vendedores.findOneAndDelete({ _id })) || undefined;
+    async delete(filter) {
+        return Vendedor.findOneAndDelete(filter);
     }
 }
+export { VendedorRepository };
 //# sourceMappingURL=vendedor.repository.js.map

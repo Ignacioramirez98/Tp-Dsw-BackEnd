@@ -1,33 +1,41 @@
-import { Repository } from "../shared/repository.js"
-import { Producto } from "../Producto/producto.entity.js"
-import { db } from '../shared/db/conn.js'
-import { ObjectId } from "mongodb"
+import { Repository } from "../shared/repository.js";
+import { Producto } from "../Producto/producto.entity.js";
+import { db } from '../shared/db/conn.js';
+import { ObjectId } from "mongodb";
 
-const productos = db.collection<Producto>('productos')
+const productos = db.collection<Producto>('productos');
 
-export class ProductoRepository implements Repository<Producto>
-{
+export class ProductoRepository implements Repository<Producto> {
+    
     public async findAll(): Promise<Producto[] | undefined> {
-        return await productos.find().toArray()
+        return await productos.find().toArray();
     }
 
-    public async findOne(item: { id: string; }): Promise<Producto | undefined>{
-        const _id = new ObjectId(item.id);
-        return (await productos.findOne({_id})) || undefined
+    public async findOne(item: { _id: ObjectId }): Promise<Producto | undefined> {
+        // Usamos el _id directamente
+        return (await productos.findOne({ _id: item._id })) || undefined;
     }
 
     public async add(item: Producto): Promise<Producto | undefined> {
-        item._id = (await productos.insertOne(item)).insertedId
-        return item
+        item._id = (await productos.insertOne(item)).insertedId;
+        return item;
     }
 
-    public async update(id:string, item: Producto): Promise<Producto | undefined>{
-        const _id = new ObjectId(id)
-        return (await productos.findOneAndUpdate({_id},{$set:item},{returnDocument:'after'})) || undefined
-    }
+public async update(id: ObjectId, item: Producto): Promise<Producto | undefined> {
+    const _id = new ObjectId(id);
+    const result = await productos.updateOne({ _id }, { $set: item });
 
-    public async delete(item: { id: string; }): Promise<Producto | undefined> {
-        const _id = new ObjectId(item.id)
-        return await (productos.findOneAndDelete({_id})) || undefined
+    if (result.modifiedCount === 1) {
+        // Retornamos el producto actualizado si se realizó la modificación
+        return await productos.findOne({ _id }) || undefined;
     }
+    return undefined;
+}
+
+public async delete(item: { _id: ObjectId }): Promise<Producto | undefined> {
+    const result = await productos.findOneAndDelete({ _id: item._id });
+    return result ? result as Producto : undefined;
+}
+
+
 }

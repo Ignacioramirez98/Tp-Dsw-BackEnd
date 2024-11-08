@@ -1,68 +1,100 @@
-import { Request, Response, NextFunction } from "express"
-import { LocalidadRepository } from "./localidad.repository.js"
-import { Localidad } from "./localidad.entity.js"
+import { Request, Response, NextFunction } from "express";
+import { LocalidadRepository } from "../localidad/localidad.repository.js";
+import { Localidad } from "../localidad/localidad.entity.js";
 
-const repository = new LocalidadRepository()
+import { ObjectId } from "mongodb";  // Importar ObjectId para la validación
+
+const repository = new LocalidadRepository();
 
 function sanitizeLocalidadInput(req: Request, res: Response, next: NextFunction) {
     req.body.sanitizedInput = {
         nombre: req.body.nombre,
         codigo_postal: req.body.codigo_postal,
-    }
+    };
 
     Object.keys(req.body.sanitizedInput).forEach((key) => {
         if (req.body.sanitizedInput[key] === undefined) {
-            delete req.body.sanitizedInput[key]
+            delete req.body.sanitizedInput[key];
         }
-    })
-    next()
+    });
+    next();
+}
+
+// Función para validar y convertir el id en ObjectId
+function validateAndConvertId(id: string): ObjectId | null {
+    if (ObjectId.isValid(id)) {
+        return new ObjectId(id);  // Convertir a ObjectId
+    }
+    return null;  // Retornar null si el id no es válido
 }
 
 async function findAll(req: Request, res: Response) {
-    res.json({ data: await repository.findAll() })
+    res.json({ data: await repository.findAll() });
 }
 
 async function findOne(req: Request, res: Response) {
-    const id = req.params.id
-    const localidad = await repository.findOne({ id })
-    if (!localidad) {
-        return res.status(404).send({ message: 'Localidad no encontrada' })
+    const { id } = req.params;
+
+    // Validar y convertir el id
+    const localidadId = validateAndConvertId(id);
+    if (!localidadId) {
+        return res.status(400).send({ message: 'ID inválido' });
     }
-    res.json({ data: localidad })
+
+    const localidad = await repository.findOne({ _id: localidadId });
+    if (!localidad) {
+        return res.status(404).send({ message: 'localidad no encontrado' });
+    }
+    res.json({ data: localidad });
 }
 
 async function add(req: Request, res: Response) {
-    const input = req.body.sanitizedInput
+    const input = req.body.sanitizedInput;
 
     const localidadInput = new Localidad(
         input.nombre,
         input.codigo_postal,
-    )
+    );
 
-    const localidad = await repository.add(localidadInput)
-    return res.status(201).send({ message: 'Localidad creada', data: localidad })
+    const localidad = await repository.add(localidadInput);
+    return res.status(201).send({ message: 'localidad creado', data: localidad });
 }
 
 async function update(req: Request, res: Response) {
-    const localidad = await repository.update(req.params.id, req.body.sanitizedInput)
+    const { id } = req.params;
 
-    if (!localidad) {
-        return res.status(404).send({ message: 'localidad no encontrada' })
+    // Validar y convertir el id
+    const localidadId = validateAndConvertId(id);
+    if (!localidadId) {
+        return res.status(400).send({ message: 'ID inválido' });
     }
 
-    return res.status(200).send({ message: 'localidad actualizada correctamente', data: localidad })
+    // Actualizar el localidad con los datos sanitizados
+    const localidad = await repository.update(localidadId, req.body.sanitizedInput);
+
+    if (!localidad) {
+        return res.status(404).send({ message: 'localidad no encontrado' });
+    }
+
+    return res.status(200).send({ message: 'localidad actualizado exitosamente', data: localidad });
 }
 
 async function remove(req: Request, res: Response) {
-    const id = req.params.id
-    const localidad = await repository.delete({ id })
+    const { id } = req.params;
+
+    // Validar y convertir el id
+    const localidadId = validateAndConvertId(id);
+    if (!localidadId) {
+        return res.status(400).send({ message: 'ID inválido' });
+    }
+
+    const localidad = await repository.delete({ _id: localidadId });
 
     if (!localidad) {
-        res.status(404).send({ message: 'Localidad no encontrada' })
-    } else {
-        res.status(200).send({ message: 'Localidad eliminada correctamente' })
+        return res.status(404).send({ message: 'localidad no encontrado' });
     }
+
+    return res.status(200).send({ message: 'localidad eliminado exitosamente' });
 }
 
-export { sanitizeLocalidadInput, findAll, findOne, add, update, remove }
-
+export { sanitizeLocalidadInput, findAll, findOne, add, update, remove };

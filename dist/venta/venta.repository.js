@@ -6,8 +6,8 @@ export class VentaRepository {
         return await ventas.find().toArray();
     }
     async findOne(item) {
-        const _id = new ObjectId(item.id);
-        return (await ventas.findOne({ _id })) || undefined;
+        // Usamos el _id directamente
+        return (await ventas.findOne({ _id: item._id })) || undefined;
     }
     async add(item) {
         item._id = (await ventas.insertOne(item)).insertedId;
@@ -15,11 +15,16 @@ export class VentaRepository {
     }
     async update(id, item) {
         const _id = new ObjectId(id);
-        return (await ventas.findOneAndUpdate({ _id }, { $set: item }, { returnDocument: 'after' })) || undefined;
+        const result = await ventas.updateOne({ _id }, { $set: item });
+        if (result.modifiedCount === 1) {
+            // Retornamos el Venta actualizado si se realizó la modificación
+            return await ventas.findOne({ _id }) || undefined;
+        }
+        return undefined;
     }
     async delete(item) {
-        const _id = new ObjectId(item.id);
-        return await (ventas.findOneAndDelete({ _id })) || undefined;
+        const result = await ventas.findOneAndDelete({ _id: item._id });
+        return result ? result : undefined;
     }
 }
 //# sourceMappingURL=venta.repository.js.map

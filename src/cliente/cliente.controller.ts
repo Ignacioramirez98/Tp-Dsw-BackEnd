@@ -1,10 +1,11 @@
-import { Request, Response, NextFunction } from "express"
-import { ClienteRepository } from "./cliente.repository.js"
-import { Cliente } from "./cliente.entity.js"
+import { Request, Response, NextFunction } from "express";
+import { ClienteRepository } from "../cliente/cliente.repository.js";
+import { Cliente } from "../cliente/cliente.entity.js";  // Importa el modelo Cliente, no el tipo ClienteDocument
+import { ObjectId } from "mongodb";  // Importar ObjectId para la validación
 
-const repository = new ClienteRepository()
+const repository = new ClienteRepository();
 
-function sanitizeLocalidadInput(req: Request, res: Response, next: NextFunction) {
+function sanitizeClienteInput(req: Request, res: Response, next: NextFunction) {
     req.body.sanitizedInput = {
         nombre: req.body.nombre,
         apellido: req.body.apellido,
@@ -13,66 +14,100 @@ function sanitizeLocalidadInput(req: Request, res: Response, next: NextFunction)
         telefono: req.body.telefono,
         direccion: req.body.direccion,
         razon_social: req.body.razon_social,
-    }
+        usuario: req.body.usuario,
+        contraseña: req.body.contraseña,
+    };
 
     Object.keys(req.body.sanitizedInput).forEach((key) => {
         if (req.body.sanitizedInput[key] === undefined) {
-            delete req.body.sanitizedInput[key]
+            delete req.body.sanitizedInput[key];
         }
-    })
-    next()
+    });
+    next();
+}
+
+// Función para validar y convertir el id en ObjectId
+function validateAndConvertId(id: string): ObjectId | null {
+    if (ObjectId.isValid(id)) {
+        return new ObjectId(id);  // Convertir a ObjectId
+    }
+    return null;  // Retornar null si el id no es válido
 }
 
 async function findAll(req: Request, res: Response) {
-    res.json({ data: await repository.findAll() })
+    res.json({ data: await repository.findAll() });
 }
 
 async function findOne(req: Request, res: Response) {
-    const id = req.params.id
-    const cliente = await repository.findOne({ id })
-    if (!cliente) {
-        return res.status(404).send({ message: 'Cliente no encontrado' })
+    const { id } = req.params;
+
+    // Validar y convertir el id
+    const clienteId = validateAndConvertId(id);
+    if (!clienteId) {
+        return res.status(400).send({ message: 'ID inválido' });
     }
-    res.json({ data: cliente })
+
+    const cliente = await repository.findOne({ _id: clienteId });
+    if (!cliente) {
+        return res.status(404).send({ message: 'Cliente no encontrado' });
+    }
+    res.json({ data: cliente });
 }
 
 async function add(req: Request, res: Response) {
-    const input = req.body.sanitizedInput
+    const input = req.body.sanitizedInput;
 
-    const clienteInput = new Cliente(
-        input.nombre,
-        input.apellido,
-        input.dni,
-        input.mail,
-        input.telefono,
-        input.direccion,
-        input.razon_social,
-    )
+    const clienteInput = new Cliente({
+        nombre: input.nombre,
+        apellido: input.apellido,
+        dni: input.dni,
+        mail: input.mail,
+        telefono: input.telefono,
+        direccion: input.direccion,
+        razon_social: input.razon_social,
+        usuario: input.usuario,
+        contraseña: input.contraseña,
+    });
 
-    const cliente = await repository.add(clienteInput)
-    return res.status(201).send({ message: 'Cliente creado', data: cliente })
+    const cliente = await repository.add(clienteInput);
+    return res.status(201).send({ message: 'Cliente creado', data: cliente });
 }
 
 async function update(req: Request, res: Response) {
-    const cliente = await repository.update(req.params.id, req.body.sanitizedInput)
+    const { id } = req.params;
 
-    if (!cliente) {
-        return res.status(404).send({ message: 'Cliente no encontrado' })
+    // Validar y convertir el id
+    const clienteId = validateAndConvertId(id);
+    if (!clienteId) {
+        return res.status(400).send({ message: 'ID inválido' });
     }
 
-    return res.status(200).send({ message: 'Cliente actualizado correctamente', data: cliente })
+    // Actualizar el cliente con los datos sanitizados
+    const cliente = await repository.update(clienteId, req.body.sanitizedInput);
+
+    if (!cliente) {
+        return res.status(404).send({ message: 'Cliente no encontrado' });
+    }
+
+    return res.status(200).send({ message: 'Cliente actualizado exitosamente', data: cliente });
 }
 
 async function remove(req: Request, res: Response) {
-    const id = req.params.id
-    const cliente = await repository.delete({ id })
+    const { id } = req.params;
+
+    // Validar y convertir el id
+    const clienteId = validateAndConvertId(id);
+    if (!clienteId) {
+        return res.status(400).send({ message: 'ID inválido' });
+    }
+
+    const cliente = await repository.delete({ _id: clienteId });
 
     if (!cliente) {
-        res.status(404).send({ message: 'Cleinte no encontrado' })
-    } else {
-        res.status(200).send({ message: 'Cliente eliminado correctamente' })
+        return res.status(404).send({ message: 'Cliente no encontrado' });
     }
+
+    return res.status(200).send({ message: 'Cliente eliminado exitosamente' });
 }
 
-export { sanitizeLocalidadInput, findAll, findOne, add, update, remove }
-
+export { sanitizeClienteInput, findAll, findOne, add, update, remove };

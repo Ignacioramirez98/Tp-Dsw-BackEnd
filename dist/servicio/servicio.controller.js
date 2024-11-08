@@ -1,5 +1,6 @@
-import { ServicioRepository } from "./servicio.repository.js";
-import { Servicio } from "./servicio.entity.js";
+import { ServicioRepository } from "../servicio/servicio.repository.js";
+import { Servicio } from "../servicio/servicio.entity.js";
+import { ObjectId } from "mongodb"; // Importar ObjectId para la validación
 const repository = new ServicioRepository();
 function sanitizeServicioInput(req, res, next) {
     req.body.sanitizedInput = {
@@ -14,14 +15,26 @@ function sanitizeServicioInput(req, res, next) {
     });
     next();
 }
+// Función para validar y convertir el id en ObjectId
+function validateAndConvertId(id) {
+    if (ObjectId.isValid(id)) {
+        return new ObjectId(id); // Convertir a ObjectId
+    }
+    return null; // Retornar null si el id no es válido
+}
 async function findAll(req, res) {
     res.json({ data: await repository.findAll() });
 }
 async function findOne(req, res) {
-    const id = req.params.id;
-    const servicio = await repository.findOne({ id });
+    const { id } = req.params;
+    // Validar y convertir el id
+    const servicioId = validateAndConvertId(id);
+    if (!servicioId) {
+        return res.status(400).send({ message: 'ID inválido' });
+    }
+    const servicio = await repository.findOne({ _id: servicioId });
     if (!servicio) {
-        return res.status(404).send({ message: 'Servicio no encontrado' });
+        return res.status(404).send({ message: 'servicio no encontrado' });
     }
     res.json({ data: servicio });
 }
@@ -29,24 +42,34 @@ async function add(req, res) {
     const input = req.body.sanitizedInput;
     const servicioInput = new Servicio(input.idServicio, input.descripcion, input.importe_por_hora);
     const servicio = await repository.add(servicioInput);
-    return res.status(201).send({ message: 'Servicio creado', data: servicio });
+    return res.status(201).send({ message: 'servicio creado', data: servicio });
 }
 async function update(req, res) {
-    const servicio = await repository.update(req.params.id, req.body.sanitizedInput);
-    if (!servicio) {
-        return res.status(404).send({ message: 'servicio not found' });
+    const { id } = req.params;
+    // Validar y convertir el id
+    const servicioId = validateAndConvertId(id);
+    if (!servicioId) {
+        return res.status(400).send({ message: 'ID inválido' });
     }
-    return res.status(200).send({ message: 'servicio updated successfully', data: servicio });
+    // Actualizar el servicio con los datos sanitizados
+    const servicio = await repository.update(servicioId, req.body.sanitizedInput);
+    if (!servicio) {
+        return res.status(404).send({ message: 'servicio no encontrado' });
+    }
+    return res.status(200).send({ message: 'servicio actualizado exitosamente', data: servicio });
 }
 async function remove(req, res) {
-    const id = req.params.id;
-    const servicio = await repository.delete({ id });
+    const { id } = req.params;
+    // Validar y convertir el id
+    const servicioId = validateAndConvertId(id);
+    if (!servicioId) {
+        return res.status(400).send({ message: 'ID inválido' });
+    }
+    const servicio = await repository.delete({ _id: servicioId });
     if (!servicio) {
-        res.status(404).send({ message: 'Servicio not found' });
+        return res.status(404).send({ message: 'servicio no encontrado' });
     }
-    else {
-        res.status(200).send({ message: 'Servicio deleted successfully' });
-    }
+    return res.status(200).send({ message: 'servicio eliminado exitosamente' });
 }
 export { sanitizeServicioInput, findAll, findOne, add, update, remove };
 //# sourceMappingURL=servicio.controller.js.map

@@ -6,8 +6,8 @@ export class ServicioRepository {
         return await servicios.find().toArray();
     }
     async findOne(item) {
-        const _id = new ObjectId(item.id);
-        return (await servicios.findOne({ _id })) || undefined;
+        // Usamos el _id directamente
+        return (await servicios.findOne({ _id: item._id })) || undefined;
     }
     async add(item) {
         item._id = (await servicios.insertOne(item)).insertedId;
@@ -15,11 +15,16 @@ export class ServicioRepository {
     }
     async update(id, item) {
         const _id = new ObjectId(id);
-        return (await servicios.findOneAndUpdate({ _id }, { $set: item }, { returnDocument: 'after' })) || undefined;
+        const result = await servicios.updateOne({ _id }, { $set: item });
+        if (result.modifiedCount === 1) {
+            // Retornamos el Servicio actualizado si se realizó la modificación
+            return await servicios.findOne({ _id }) || undefined;
+        }
+        return undefined;
     }
     async delete(item) {
-        const _id = new ObjectId(item.id);
-        return await (servicios.findOneAndDelete({ _id })) || undefined;
+        const result = await servicios.findOneAndDelete({ _id: item._id });
+        return result ? result : undefined;
     }
 }
 //# sourceMappingURL=servicio.repository.js.map

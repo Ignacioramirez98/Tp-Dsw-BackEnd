@@ -6,8 +6,8 @@ export class ProductoRepository {
         return await productos.find().toArray();
     }
     async findOne(item) {
-        const _id = new ObjectId(item.id);
-        return (await productos.findOne({ _id })) || undefined;
+        // Usamos el _id directamente
+        return (await productos.findOne({ _id: item._id })) || undefined;
     }
     async add(item) {
         item._id = (await productos.insertOne(item)).insertedId;
@@ -15,11 +15,16 @@ export class ProductoRepository {
     }
     async update(id, item) {
         const _id = new ObjectId(id);
-        return (await productos.findOneAndUpdate({ _id }, { $set: item }, { returnDocument: 'after' })) || undefined;
+        const result = await productos.updateOne({ _id }, { $set: item });
+        if (result.modifiedCount === 1) {
+            // Retornamos el producto actualizado si se realizó la modificación
+            return await productos.findOne({ _id }) || undefined;
+        }
+        return undefined;
     }
     async delete(item) {
-        const _id = new ObjectId(item.id);
-        return await (productos.findOneAndDelete({ _id })) || undefined;
+        const result = await productos.findOneAndDelete({ _id: item._id });
+        return result ? result : undefined;
     }
 }
 //# sourceMappingURL=producto.repository.js.map

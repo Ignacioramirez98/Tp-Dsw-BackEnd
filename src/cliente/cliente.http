@@ -16,7 +16,9 @@ Content-Type: application/json
           "mail":"ig@com.ar",
           "telefono":"111111111",
           "direccion":"calle falsa 123",
-          "razon_social":"Mesa 12"
+          "razon_social":"Mesa 12",
+          "usuario":"UsuarioNacho",
+          "razon_social":"contraseña"
 }
 
 ### Modificar un cliente (completo)
@@ -30,7 +32,9 @@ Content-Type: application/json
           "mail":"co@com.ar",
           "telefono":"22222222",
           "direccion":"calle falsa 144",
-          "razon_social":"Mesa 10"
+          "razon_social":"Mesa 10",
+          "usuario":"UsuarioNacho",
+          "razon_social":"contraseña"
 }
 
 ### Modificar un cliente (parcial)

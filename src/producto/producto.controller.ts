@@ -1,9 +1,10 @@
-import { Request, Response, NextFunction } from "express"
-import { ProductoRepository } from "../Producto/producto.repository.js"
-import { Producto } from "../Producto/producto.entity.js"
+import { Request, Response, NextFunction } from "express";
+import { ProductoRepository } from "../Producto/producto.repository.js";
+import { Producto } from "../Producto/producto.entity.js";
 import multer from 'multer';
+import { ObjectId } from "mongodb";  // Importar ObjectId para la validación
 
-const repository = new ProductoRepository()
+const repository = new ProductoRepository();
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
@@ -18,39 +19,54 @@ function uploadImage(req: Request, res: Response, next: NextFunction) {
 
 function sanitizeProductoInput(req: Request, res: Response, next: NextFunction) {
     req.body.sanitizedInput = {
-    nombre: req.body.nombre,
-    descripcion: req.body.descripcion,
-    importe_compra: req.body.importe_compra,
-    importe_venta: req.body.importe_venta,
-    stock: req.body.stock,
-    }
+        nombre: req.body.nombre,
+        descripcion: req.body.descripcion,
+        importe_compra: req.body.importe_compra,
+        importe_venta: req.body.importe_venta,
+        stock: req.body.stock,
+    };
 
     Object.keys(req.body.sanitizedInput).forEach((key) => {
-    if (req.body.sanitizedInput[key] === undefined) {
-        delete req.body.sanitizedInput[key]
+        if (req.body.sanitizedInput[key] === undefined) {
+            delete req.body.sanitizedInput[key];
+        }
+    });
+    next();
+}
+
+// Función para validar y convertir el id en ObjectId
+function validateAndConvertId(id: string): ObjectId | null {
+    if (ObjectId.isValid(id)) {
+        return new ObjectId(id);  // Convertir a ObjectId
     }
-    })
-    next()
+    return null;  // Retornar null si el id no es válido
 }
 
-async function findAll(req: Request, res: Response){
-    res.json({ data: await repository.findAll() })
+async function findAll(req: Request, res: Response) {
+    res.json({ data: await repository.findAll() });
 }
 
-async function findOne(req: Request, res: Response){
-    const id = req.params.id
-    const producto = await repository.findOne({id})
+async function findOne(req: Request, res: Response) {
+    const { id } = req.params;
+
+    // Validar y convertir el id
+    const productoId = validateAndConvertId(id);
+    if (!productoId) {
+        return res.status(400).send({ message: 'ID inválido' });
+    }
+
+    const producto = await repository.findOne({ _id: productoId });
     if (!producto) {
-        return res.status(404).send({message:'Producto no encontrado'})
+        return res.status(404).send({ message: 'Producto no encontrado' });
     }
-    res.json({data : producto})
+    res.json({ data: producto });
 }
 
 async function add(req: Request, res: Response) {
     const input = req.body.sanitizedInput;
 
     const productoInput = new Producto(
-        input.nombre,        
+        input.nombre,
         input.descripcion,
         input.importe_compra,
         input.importe_venta,
@@ -59,29 +75,44 @@ async function add(req: Request, res: Response) {
     );
 
     const producto = await repository.add(productoInput);
-    return res.status(201).send({message: 'Producto creado', data: producto});
+    return res.status(201).send({ message: 'Producto creado', data: producto });
 }
 
 async function update(req: Request, res: Response) {
-    const producto = await repository.update(req.params.id, req.body.sanitizedInput)
+    const { id } = req.params;
+
+    // Validar y convertir el id
+    const productoId = validateAndConvertId(id);
+    if (!productoId) {
+        return res.status(400).send({ message: 'ID inválido' });
+    }
+
+    // Actualizar el producto con los datos sanitizados
+    const producto = await repository.update(productoId, req.body.sanitizedInput);
 
     if (!producto) {
-        return res.status(404).send({ message: 'producto not found' })
-    }  
-
-    return res.status(200).send({ message: 'producto updated successfully', data: producto })
-}
-
-async function remove(req: Request, res: Response){
-    const id = req.params.id
-    const producto = await repository.delete({id})
-
-    if (!producto){
-        res.status(404).send({message: 'Producto not found'})
-    } else{
-        res.status(200).send({message: 'Producto deleted successfully'})
+        return res.status(404).send({ message: 'Producto no encontrado' });
     }
+
+    return res.status(200).send({ message: 'Producto actualizado exitosamente', data: producto });
 }
 
-export {sanitizeProductoInput, findAll, findOne, add, update, remove}
+async function remove(req: Request, res: Response) {
+    const { id } = req.params;
 
+    // Validar y convertir el id
+    const productoId = validateAndConvertId(id);
+    if (!productoId) {
+        return res.status(400).send({ message: 'ID inválido' });
+    }
+
+    const producto = await repository.delete({ _id: productoId });
+
+    if (!producto) {
+        return res.status(404).send({ message: 'Producto no encontrado' });
+    }
+
+    return res.status(200).send({ message: 'Producto eliminado exitosamente' });
+}
+
+export { sanitizeProductoInput, findAll, findOne, add, update, remove };

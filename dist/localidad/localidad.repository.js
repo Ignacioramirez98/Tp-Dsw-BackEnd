@@ -6,8 +6,8 @@ export class LocalidadRepository {
         return await localidades.find().toArray();
     }
     async findOne(item) {
-        const _id = new ObjectId(item.id);
-        return (await localidades.findOne({ _id })) || undefined;
+        // Usamos el _id directamente
+        return (await localidades.findOne({ _id: item._id })) || undefined;
     }
     async add(item) {
         item._id = (await localidades.insertOne(item)).insertedId;
@@ -15,11 +15,16 @@ export class LocalidadRepository {
     }
     async update(id, item) {
         const _id = new ObjectId(id);
-        return (await localidades.findOneAndUpdate({ _id }, { $set: item }, { returnDocument: 'after' })) || undefined;
+        const result = await localidades.updateOne({ _id }, { $set: item });
+        if (result.modifiedCount === 1) {
+            // Retornamos el Localidad actualizado si se realizó la modificación
+            return await localidades.findOne({ _id }) || undefined;
+        }
+        return undefined;
     }
     async delete(item) {
-        const _id = new ObjectId(item.id);
-        return await (localidades.findOneAndDelete({ _id })) || undefined;
+        const result = await localidades.findOneAndDelete({ _id: item._id });
+        return result ? result : undefined;
     }
 }
 //# sourceMappingURL=localidad.repository.js.map

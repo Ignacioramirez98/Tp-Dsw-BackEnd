@@ -1,32 +1,30 @@
-import { Repository } from "../shared/repository.js"
-import { Cliente } from "./cliente.entity.js"
-import { db } from '../shared/db/conn.js'
-import { ObjectId } from "mongodb"
+import { Cliente } from './cliente.entity.js';  // Importar el modelo Cliente
+import { ClienteDocument } from './cliente.entity.js';  // Importar la interfaz ClienteDocument
+import { ObjectId } from 'mongodb';  // Importar ObjectId
 
-const cliente = db.collection<Cliente>('cliente')
-
-export class ClienteRepository implements Repository<Cliente> {
-    public async findAll(): Promise<Cliente[] | undefined> {
-        return await cliente.find().toArray()
+export class ClienteRepository {
+    // Método para buscar un solo cliente
+    async findOne(filter: { _id: ObjectId }): Promise<ClienteDocument | null> {
+        return await Cliente.findOne(filter);  // Usar el modelo Cliente
     }
 
-    public async findOne(item: { id: string; }): Promise<Cliente | undefined> {
-        const _id = new ObjectId(item.id);
-        return (await cliente.findOne({ _id })) || undefined
+    // Método para buscar todos los clientes
+    async findAll(): Promise<ClienteDocument[]> {
+        return await Cliente.find();  // Usar el modelo Cliente
     }
 
-    public async add(item: Cliente): Promise<Cliente | undefined> {
-        item._id = (await cliente.insertOne(item)).insertedId
-        return item
+    // Método para agregar un nuevo cliente
+    async add(cliente: ClienteDocument): Promise<ClienteDocument> {
+        return await Cliente.create(cliente);  // Usar el modelo Cliente
     }
 
-    public async update(id: string, item: Cliente): Promise<Cliente | undefined> {
-        const _id = new ObjectId(id)
-        return (await cliente.findOneAndUpdate({ _id }, { $set: item }, { returnDocument: 'after' })) || undefined
+    // Método para actualizar un cliente
+    async update(id: ObjectId, updatedData: Partial<ClienteDocument>): Promise<ClienteDocument | null> {
+        return await Cliente.findOneAndUpdate({ _id: id }, updatedData, { new: true });
     }
 
-    public async delete(item: { id: string; }): Promise<Cliente | undefined> {
-        const _id = new ObjectId(item.id)
-        return await (cliente.findOneAndDelete({ _id })) || undefined
+    // Método para eliminar un cliente
+    async delete(filter: { _id: ObjectId }): Promise<ClienteDocument | null> {
+        return await Cliente.findOneAndDelete(filter);  // Usar el modelo Cliente
     }
 }
