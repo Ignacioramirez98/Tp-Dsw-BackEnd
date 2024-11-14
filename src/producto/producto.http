@@ -3,14 +3,14 @@
 GET http://localhost:3000/productos/
 
 ### Obtener un producto
-GET http://localhost:3000/productos/66953d05693baf397055b328
+GET http://localhost:3000/productos/66301be70e2069657ca2d9e6
 
 ### Crear un nuevo producto
 POST http://localhost:3000/productos
 Content-Type: application/json
 
 {
-          "nombre": "productoPrueba",
+          "nombre": "productoPrueba2",
           "descripcion": "descripcionPrueba",
           "importe_compra": 1000,
           "importe_venta": 2000,
@@ -30,7 +30,7 @@ Content-Type: application/json
 }
 
 ### Modificar un producto (parcial)
-PATCH http://localhost:3000/productos/66953d05693baf397055b328
+PATCH http://localhost:3000/productos/67364cd92ac43c34a0612c00
 Content-Type: application/json
 
 {

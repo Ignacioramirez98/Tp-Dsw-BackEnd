@@ -10,7 +10,6 @@ POST http://localhost:3000/servicios
 Content-Type: application/json
 
 {
-          "idServicio": "servicioPrueba",
           "descripcion": "descripcionPrueba",
           "importe_por_hora": 3000
 }
@@ -20,7 +19,6 @@ PUT http://localhost:3000/servicios/66fd74edc502625cc64a706f
 Content-Type: application/json
 
 {
-          "idServicio": "servicioModificado",
           "descripcion": "descripcionModificada",
           "importe_por_hora": 3500
 }
@@ -36,4 +34,4 @@ Content-Type: application/json
 
 
 ### Borrar un servicio
-DELETE http://localhost:3000/servicios/66fd74edc502625cc64a706f
+DELETE http://localhost:3000/servicios/3000

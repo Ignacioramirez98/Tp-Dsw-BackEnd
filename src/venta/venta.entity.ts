@@ -1,9 +1,7 @@
 import { ObjectId } from "mongodb";
-
-// Asegúrate de tener definidos los modelos Producto y Servicio
-import { Producto } from "../Producto/producto.entity.js";  // Ruta del archivo de Producto
-import { Servicio } from "../servicio/servicio.entity.js";  // Ruta del archivo de Servicio
-
+import { Producto } from "../Producto/producto.entity.js";
+import { Servicio } from "../servicio/servicio.entity.js";  
+import { Cliente } from "../cliente/cliente.entity.js";  
 export class Venta {
   constructor(
     public estado: string,
@@ -11,6 +9,7 @@ export class Venta {
     public fechaDeVenta: Date,
     public fechaEntrega: Date,
     public fechaCancelacion: Date | undefined | null,
+    public cliente: Cliente,
     public productos: Producto[],  // Colección de productos
     public servicios: Servicio[],  // Colección de servicios
     public _id?: ObjectId

@@ -3,10 +3,10 @@
 GET http://localhost:3000/ventas/
 
 ### Obtener una venta
-GET http://localhost:3000/venta/66fd75a4c502625cc64a7070
+GET http://localhost:3000/ventas/66fd75a4c502625cc64a7070
 
 ### Crear una nueva venta
-POST http://localhost:3000/venta
+POST http://localhost:3000/ventas
 Content-Type: application/json
 
 {
@@ -15,7 +15,6 @@ Content-Type: application/json
           "fechaDeVenta": "03-09-24",
           "fechaEntrega": "03-09-24",
           "fechaCancelacion": "-",
-          "cantidad": "2"
 }
 
 ### Modificar una venta (completo)

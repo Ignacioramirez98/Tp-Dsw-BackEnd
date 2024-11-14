@@ -3,7 +3,8 @@ import { VentaRepository } from "../venta/venta.repository.js";
 import { Venta } from "../venta/venta.entity.js";
 import { Producto } from "../Producto/producto.entity.js";
 import { Servicio } from "../servicio/servicio.entity.js";
-import { ObjectId } from "mongodb"; // Importar ObjectId para la validación
+import { Cliente } from "../cliente/cliente.entity.js";
+import { ObjectId } from "mongodb";
 
 const repository = new VentaRepository();
 
@@ -15,8 +16,9 @@ function sanitizeVentaInput(req: Request, res: Response, next: NextFunction) {
         fechaDeVenta: req.body.fechaDeVenta,
         fechaEntrega: req.body.fechaEntrega,
         fechaCancelacion: req.body.fechaCancelacion,
-        productos: req.body.productos,   // Espera un array de productos
-        servicios: req.body.servicios    // Espera un array de servicios
+        cliente: req.body.cliente,
+        productos: req.body.productos,
+        servicios: req.body.servicios
     };
 
     Object.keys(req.body.sanitizedInput).forEach((key) => {
@@ -54,7 +56,9 @@ async function findOne(req: Request, res: Response) {
 async function add(req: Request, res: Response) {
     const input = req.body.sanitizedInput;
 
-    // Mapear arrays de productos y servicios a instancias de Producto y Servicio
+const cliente = new Cliente(input.cliente.nombre, input.cliente.apellido, input.cliente.dni, input.cliente.email, input.cliente.telefono, input.cliente.direccion, 
+    input.cliente.razon_social, input.cliente.usuario, input.cliente.contraseña, input.cliente._id);
+
 const productos = (input.productos || []).map((p: any) => new Producto(p.nombre, p.descripcion, p.importe_compra, p.importe_venta, p.stock, p._id));
 const servicios = (input.servicios || []).map((s: any) => new Servicio(s.descripcion, s.importe_por_hora, s._id));
 
@@ -64,6 +68,7 @@ const servicios = (input.servicios || []).map((s: any) => new Servicio(s.descrip
         input.fechaDeVenta,
         input.fechaEntrega,
         input.fechaCancelacion,
+        cliente,
         productos,
         servicios
     );
@@ -81,6 +86,9 @@ async function update(req: Request, res: Response) {
     }
 
     const input = req.body.sanitizedInput;
+
+const cliente = new Cliente(input.cliente.nombre, input.cliente.apellido, input.cliente.dni, input.cliente.email, input.cliente.telefono, input.cliente.direccion, 
+    input.cliente.razon_social, input.cliente.usuario, input.cliente.contraseña, input.cliente._id);
 
     const productos = (input.productos || []).map((p: any) => new Producto(p.nombre, p.descripcion, p.importe_compra, p.importe_venta, p.stock, p._id));
     const servicios = (input.servicios || []).map((s: any) => new Servicio(s.descripcion, s.importe_por_hora, s._id));
