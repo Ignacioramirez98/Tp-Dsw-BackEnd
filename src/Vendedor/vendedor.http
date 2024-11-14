@@ -15,7 +15,9 @@ Content-Type: application/json
           "mail": "cotidominio@gmail.com",
           "dni": "45681582",
           "telefono": "3413457895",
-          "rol": "rol"
+          "rol": "rol",
+          "usuario": "usuario",
+          "contraseña": "contraseña"
 }
 
 ### Modificar un vendedor (completo)
@@ -41,4 +43,4 @@ Content-Type: application/json
 
 
 ### Borrar un vendedor
-DELETE http://localhost:3000/vendedores/669879065647790e562e97a6
+DELETE http://localhost:3000/vendedores/66fdd79a26b27f0432447185

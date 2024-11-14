@@ -3,7 +3,7 @@
 GET http://localhost:3000/clientes/
 
 ### Obtener un cliente
-GET http://localhost:3000/clientes/
+GET http://localhost:3000/clientes/672daac323a2c9f8e48eabc3
 
 ### Crear un nuevo cliente
 POST http://localhost:3000/clientes
@@ -17,8 +17,8 @@ Content-Type: application/json
           "telefono":"111111111",
           "direccion":"calle falsa 123",
           "razon_social":"Mesa 12",
-          "usuario":"UsuarioNacho",
-          "razon_social":"contraseña"
+          "usuario":"usuario",
+          "contraseña":"contraseña"
 }
 
 ### Modificar un cliente (completo)
@@ -53,4 +53,4 @@ Content-Type: application/json
 
 
 ### Borrar un cliente
-DELETE http://localhost:3000/clientes/
+DELETE http://localhost:3000/clientes/67344f5e59445f2f96ef54b4

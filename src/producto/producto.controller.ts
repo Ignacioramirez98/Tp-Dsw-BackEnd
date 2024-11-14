@@ -1,21 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import { ProductoRepository } from "../Producto/producto.repository.js";
 import { Producto } from "../Producto/producto.entity.js";
-import multer from 'multer';
 import { ObjectId } from "mongodb";  // Importar ObjectId para la validación
 
 const repository = new ProductoRepository();
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
-
-function uploadImage(req: Request, res: Response, next: NextFunction) {
-    upload.single('image')(req, res, (err) => {
-        if (err) {
-            return res.status(400).send({ message: 'Error uploading image', error: err });
-        }
-        next();
-    });
-}
 
 function sanitizeProductoInput(req: Request, res: Response, next: NextFunction) {
     req.body.sanitizedInput = {
@@ -71,7 +59,6 @@ async function add(req: Request, res: Response) {
         input.importe_compra,
         input.importe_venta,
         input.stock,
-        input.imagen // Incluye imagen si existe
     );
 
     const producto = await repository.add(productoInput);

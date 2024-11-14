@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import { ClienteRepository } from "../cliente/cliente.repository.js";
-import { Cliente } from "../cliente/cliente.entity.js";  // Importa el modelo Cliente, no el tipo ClienteDocument
+import { Cliente } from "../cliente/cliente.entity.js";
 import { ObjectId } from "mongodb";  // Importar ObjectId para la validación
+import bcrypt from "bcryptjs";  // Importar bcryptjs para comparar contraseñas
+import jwt from "jsonwebtoken";  // Importar jsonwebtoken para generar el token
 
 const repository = new ClienteRepository();
 
@@ -49,7 +51,7 @@ async function findOne(req: Request, res: Response) {
 
     const cliente = await repository.findOne({ _id: clienteId });
     if (!cliente) {
-        return res.status(404).send({ message: 'Cliente no encontrado' });
+        return res.status(404).send({ message: 'cliente no encontrado' });
     }
     res.json({ data: cliente });
 }
@@ -57,20 +59,22 @@ async function findOne(req: Request, res: Response) {
 async function add(req: Request, res: Response) {
     const input = req.body.sanitizedInput;
 
-    const clienteInput = new Cliente({
-        nombre: input.nombre,
-        apellido: input.apellido,
-        dni: input.dni,
-        mail: input.mail,
-        telefono: input.telefono,
-        direccion: input.direccion,
-        razon_social: input.razon_social,
-        usuario: input.usuario,
-        contraseña: input.contraseña,
-    });
+    const hashedPassword = await bcrypt.hash(input.contraseña, 10);  // 10 es el número de "salts"
+
+    const clienteInput = new Cliente(
+        input.nombre,
+        input.apellido,
+        input.dni,
+        input.mail,
+        input.telefono,
+        input.direccion,
+        input.razon_social,
+        input.usuario,
+        hashedPassword
+    );
 
     const cliente = await repository.add(clienteInput);
-    return res.status(201).send({ message: 'Cliente creado', data: cliente });
+    return res.status(201).send({ message: 'cliente creado', data: cliente });
 }
 
 async function update(req: Request, res: Response) {
@@ -86,10 +90,10 @@ async function update(req: Request, res: Response) {
     const cliente = await repository.update(clienteId, req.body.sanitizedInput);
 
     if (!cliente) {
-        return res.status(404).send({ message: 'Cliente no encontrado' });
+        return res.status(404).send({ message: 'cliente no encontrado' });
     }
 
-    return res.status(200).send({ message: 'Cliente actualizado exitosamente', data: cliente });
+    return res.status(200).send({ message: 'cliente actualizado exitosamente', data: cliente });
 }
 
 async function remove(req: Request, res: Response) {
@@ -104,10 +108,42 @@ async function remove(req: Request, res: Response) {
     const cliente = await repository.delete({ _id: clienteId });
 
     if (!cliente) {
-        return res.status(404).send({ message: 'Cliente no encontrado' });
+        return res.status(404).send({ message: 'cliente no encontrado' });
     }
 
-    return res.status(200).send({ message: 'Cliente eliminado exitosamente' });
+    return res.status(200).send({ message: 'cliente eliminado exitosamente' });
 }
 
-export { sanitizeClienteInput, findAll, findOne, add, update, remove };
+// Lógica para el login del cliente
+async function login(req: Request, res: Response) {
+    const { usuario, contraseña } = req.body;
+
+    // Buscar al cliente por el nombre de usuario
+    const cliente = await repository.findOne({ usuario });
+    if (!cliente) {
+        return res.status(404).send({ message: 'Usuario no encontrado' });
+    }
+
+    // Verificar la contraseña usando bcrypt
+    const validPassword = await bcrypt.compare(contraseña, cliente.contraseña);
+    if (!validPassword) {
+        return res.status(401).send({ message: 'Contraseña incorrecta' });
+    }
+
+    // Generar el token JWT
+    const token = jwt.sign(
+        { id: cliente._id, usuario: cliente.usuario },
+        process.env.JWT_SECRET || 'secret_key', 
+        { expiresIn: '1h' }
+    );
+
+    // Enviar el token y el clienteId al cliente
+    res.json({
+        message: 'Login exitoso',
+        token,
+        clienteId: cliente._id  // Enviar el ID del cliente
+    });
+}
+
+
+export { sanitizeClienteInput, findAll, findOne, add, update, remove, login };

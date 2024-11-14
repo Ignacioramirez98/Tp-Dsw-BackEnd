@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { VendedorRepository } from "../Vendedor/vendedor.repository.js";
-import Vendedor, { IVendedor } from "../Vendedor/vendedor.entity.js";  // Importa tanto el modelo como la interfaz
+import { Vendedor } from "../Vendedor/vendedor.entity.js";
 import { ObjectId } from "mongodb";  // Importar ObjectId para la validación
 
 const repository = new VendedorRepository();
@@ -56,18 +56,18 @@ async function findOne(req: Request, res: Response) {
 async function add(req: Request, res: Response) {
     const input = req.body.sanitizedInput;
 
-    // Creamos un nuevo objeto con las propiedades correctas, incluyendo la validación de ObjectId
-    const vendedorInput: IVendedor = {
-        ...input,
-        _id: new ObjectId(), // Si necesitas generar un nuevo ObjectId
-    };
+    const vendedorInput = new Vendedor(
+        input.nombre,
+        input.apellido,
+        input.mail,
+        input.dni,
+        input.telefono,
+        input.rol,
+        input.usuario,
+        input.contraseña
+    );
 
-    // Crear una nueva instancia de Vendedor con el input
-    const vendedor = new Vendedor(vendedorInput);  // Input ya es un objeto con las propiedades necesarias
-
-    // Guardamos el nuevo vendedor en la base de datos
-    await vendedor.save();
-
+    const vendedor = await repository.add(vendedorInput);
     return res.status(201).send({ message: 'vendedor creado', data: vendedor });
 }
 

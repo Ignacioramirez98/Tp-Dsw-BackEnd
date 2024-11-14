@@ -1,28 +1,41 @@
-import Vendedor, { IVendedor } from "../Vendedor/vendedor.entity.js"; // Importas tanto el modelo como la interfaz
+import { Repository } from "../shared/repository.js";
+import { Vendedor } from "../Vendedor/vendedor.entity.js";
+import { db } from '../shared/db/conn.js';
 import { ObjectId } from "mongodb";
 
-class VendedorRepository {
-    async findAll(): Promise<IVendedor[]> {
-        return Vendedor.find();  // Aquí usas el modelo de Mongoose
+const vendedores = db.collection<Vendedor>('vendedores');
+
+export class VendedorRepository implements Repository<Vendedor> {
+    
+    public async findAll(): Promise<Vendedor[] | undefined> {
+        return await vendedores.find().toArray();
     }
 
-    async findOne(filter: object): Promise<IVendedor | null> {
-        return Vendedor.findOne(filter);  // Aquí también
+    public async findOne(item: { _id: ObjectId }): Promise<Vendedor | undefined> {
+        // Usamos el _id directamente
+        return (await vendedores.findOne({ _id: item._id })) || undefined;
     }
 
-    async add(vendedor: IVendedor): Promise<IVendedor> {
-        const newVendedor = new Vendedor(vendedor);  // Creas una nueva instancia del modelo
-        return newVendedor.save();  // Guardamos en la base de datos
+    public async add(item: Vendedor): Promise<Vendedor | undefined> {
+        item._id = (await vendedores.insertOne(item)).insertedId;
+        return item;
     }
 
-async update(id: ObjectId, updateData: object): Promise<IVendedor | null> {
-        // Usamos findByIdAndUpdate con un ObjectId
-        return Vendedor.findByIdAndUpdate(id, updateData, { new: true });
-    }
+public async update(id: ObjectId, item: Vendedor): Promise<Vendedor | undefined> {
+    const _id = new ObjectId(id);
+    const result = await vendedores.updateOne({ _id }, { $set: item });
 
-    async delete(filter: object): Promise<IVendedor | null> {
-        return Vendedor.findOneAndDelete(filter);
+    if (result.modifiedCount === 1) {
+        // Retornamos el Vendedor actualizado si se realizó la modificación
+        return await vendedores.findOne({ _id }) || undefined;
     }
+    return undefined;
 }
 
-export { VendedorRepository };
+public async delete(item: { _id: ObjectId }): Promise<Vendedor | undefined> {
+    const result = await vendedores.findOneAndDelete({ _id: item._id });
+    return result ? result as Vendedor : undefined;
+}
+
+
+}
