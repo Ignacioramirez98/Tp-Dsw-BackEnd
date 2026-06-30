@@ -64,6 +64,7 @@ async function findOne(req: Request, res: Response) {
 
 async function add(req: Request, res: Response) {
     const input = req.body.sanitizedInput;
+    const imagenUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
     const productoInput = new Producto({
         nombre: input.nombre,
@@ -71,6 +72,7 @@ async function add(req: Request, res: Response) {
         importe_compra: input.importe_compra,
         importe_venta: input.importe_venta,
         stock: input.stock,
+        imagenUrl
     });
 
     const producto = await repository.add(productoInput);
@@ -86,8 +88,15 @@ async function update(req: Request, res: Response) {
         return res.status(400).send({ message: 'ID inválido' });
     }
 
+    const updateData: any = req.body.sanitizedInput;
+    
+    // Si hay archivo, agregar la URL de la imagen
+    if (req.file) {
+        updateData.imagenUrl = `/uploads/${req.file.filename}`;
+    }
+
     // Actualizar el producto con los datos sanitizados
-    const producto = await repository.update(productoId, req.body.sanitizedInput);
+    const producto = await repository.update(productoId, updateData);
 
     if (!producto) {
         return res.status(404).send({ message: 'Producto no encontrado' });

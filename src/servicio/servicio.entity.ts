@@ -12,6 +12,9 @@ export class Servicio {
     @Property()
     importe_por_hora!: number;
 
+    @Property({ nullable: true })
+    imagenUrl?: string;
+
     constructor(data: Partial<Servicio> = {}) {
         Object.assign(this, data);
     }

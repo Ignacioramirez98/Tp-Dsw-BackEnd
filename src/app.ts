@@ -20,6 +20,9 @@ app.use(cors({
 
 app.use(express.json());
 
+// Servir archivos estáticos (imágenes, CSS, etc.)
+app.use(express.static('public'));
+
 async function startServer() {
   try {
     await initializeORM();

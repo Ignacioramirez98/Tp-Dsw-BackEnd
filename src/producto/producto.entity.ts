@@ -21,6 +21,9 @@ export class Producto {
     @Property()
     stock!: number;
 
+    @Property({ nullable: true })
+    imagenUrl?: string;
+
     constructor(data: Partial<Producto> = {}) {
         Object.assign(this, data);
     }

@@ -57,10 +57,12 @@ async function findOne(req: Request, res: Response) {
 
 async function add(req: Request, res: Response) {
     const input = req.body.sanitizedInput;
+    const imagenUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
     const servicioInput = new Servicio({
         descripcion: input.descripcion,
-        importe_por_hora: input.importe_por_hora
+        importe_por_hora: input.importe_por_hora,
+        imagenUrl
     });
 
     const servicio = await repository.add(servicioInput);
@@ -76,8 +78,15 @@ async function update(req: Request, res: Response) {
         return res.status(400).send({ message: 'ID inválido' });
     }
 
+    const updateData: any = req.body.sanitizedInput;
+    
+    // Si hay archivo, agregar la URL de la imagen
+    if (req.file) {
+        updateData.imagenUrl = `/uploads/${req.file.filename}`;
+    }
+
     // Actualizar el servicio con los datos sanitizados
-    const servicio = await repository.update(servicioId, req.body.sanitizedInput);
+    const servicio = await repository.update(servicioId, updateData);
 
     if (!servicio) {
         return res.status(404).send({ message: 'servicio no encontrado' });
