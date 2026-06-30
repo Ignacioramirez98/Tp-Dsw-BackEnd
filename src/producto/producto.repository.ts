@@ -8,8 +8,9 @@ export class ProductoRepository implements Repository<Producto> {
         return getORM().em.getRepository(Producto);
     }
 
-    public async findAll(): Promise<Producto[] | undefined> {
-        return await this.getRepo().findAll();
+    public async findAll(filters?: Record<string, any>): Promise<Producto[] | undefined> {
+        const query = filters || {};
+        return await this.getRepo().find(query);
     }
 
     public async findOne(item: { _id: ObjectId }): Promise<Producto | undefined> {

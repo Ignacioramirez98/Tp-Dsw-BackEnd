@@ -4,6 +4,7 @@ import { Cliente } from "../cliente/cliente.entity.js";
 import { ObjectId } from "mongodb";  // Importar ObjectId para la validación
 import bcrypt from "bcryptjs";  // Importar bcryptjs para comparar contraseñas
 import jwt from "jsonwebtoken";  // Importar jsonwebtoken para generar el token
+import { createClienteSchema, loginSchema } from "../validators/cliente.validator.js";
 
 const repository = new ClienteRepository();
 
@@ -37,7 +38,24 @@ function validateAndConvertId(id: string): ObjectId | null {
 }
 
 async function findAll(req: Request, res: Response) {
-    res.json({ data: await repository.findAll() });
+    const filters: Record<string, any> = {};
+    
+    // Filtro por usuario
+    if (req.query.usuario) {
+        filters.usuario = { $regex: req.query.usuario, $options: 'i' };
+    }
+    
+    // Filtro por apellido
+    if (req.query.apellido) {
+        filters.apellido = { $regex: req.query.apellido, $options: 'i' };
+    }
+    
+    // Filtro por DNI
+    if (req.query.dni) {
+        filters.dni = req.query.dni;
+    }
+    
+    res.json({ data: await repository.findAll(Object.keys(filters).length > 0 ? filters : undefined) });
 }
 
 async function findOne(req: Request, res: Response) {
@@ -59,22 +77,30 @@ async function findOne(req: Request, res: Response) {
 async function add(req: Request, res: Response) {
     const input = req.body.sanitizedInput;
 
-    const hashedPassword = await bcrypt.hash(input.contraseña, 10);  // 10 es el número de "salts"
+    try {
+        const validated = createClienteSchema.parse(input);
+        const hashedPassword = await bcrypt.hash(validated.contraseña, 10);
 
-    const clienteInput = new Cliente({
-        nombre: input.nombre,
-        apellido: input.apellido,
-        dni: input.dni,
-        mail: input.mail,
-        telefono: input.telefono,
-        direccion: input.direccion,
-        razon_social: input.razon_social,
-        usuario: input.usuario,
-        contraseña: hashedPassword
-    });
+        const clienteInput = new Cliente({
+            nombre: validated.nombre,
+            apellido: validated.apellido,
+            dni: validated.dni,
+            mail: validated.mail,
+            telefono: validated.telefono,
+            direccion: validated.direccion,
+            razon_social: validated.razon_social || "",
+            usuario: validated.usuario,
+            contraseña: hashedPassword
+        });
 
-    const cliente = await repository.add(clienteInput);
-    return res.status(201).send({ message: 'cliente creado', data: cliente });
+        const cliente = await repository.add(clienteInput);
+        return res.status(201).send({ message: 'cliente creado', data: cliente });
+    } catch (error: any) {
+        if (error.name === 'ZodError') {
+            return res.status(400).send({ message: 'Validación fallida', errors: error.errors });
+        }
+        return res.status(500).send({ message: 'Error al crear cliente' });
+    }
 }
 
 async function update(req: Request, res: Response) {
@@ -118,31 +144,41 @@ async function remove(req: Request, res: Response) {
 async function login(req: Request, res: Response) {
     const { usuario, contraseña } = req.body;
 
-    // Buscar al cliente por el nombre de usuario
-    const cliente = await repository.findOne({ usuario });
-    if (!cliente) {
-        return res.status(404).send({ message: 'Usuario no encontrado' });
+    try {
+        const validated = loginSchema.parse({ usuario, contraseña });
+
+        // Buscar al cliente por el nombre de usuario
+        const cliente = await repository.findOne({ usuario: validated.usuario });
+        if (!cliente) {
+            return res.status(404).send({ message: 'Usuario no encontrado' });
+        }
+
+        // Verificar la contraseña usando bcrypt
+        const validPassword = await bcrypt.compare(validated.contraseña, cliente.contraseña);
+        if (!validPassword) {
+            return res.status(401).send({ message: 'Contraseña incorrecta' });
+        }
+
+        // Generar el token JWT con rol
+        const token = jwt.sign(
+            { id: cliente._id, usuario: cliente.usuario, rol: 'cliente' },
+            process.env.JWT_SECRET || 'secret_key', 
+            { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
+        );
+
+        // Enviar el token y el clienteId al cliente
+        res.json({
+            message: 'Login exitoso',
+            token,
+            clienteId: cliente._id,
+            rol: 'cliente'
+        });
+    } catch (error: any) {
+        if (error.name === 'ZodError') {
+            return res.status(400).send({ message: 'Validación fallida', errors: error.errors });
+        }
+        return res.status(500).send({ message: 'Error al iniciar sesión' });
     }
-
-    // Verificar la contraseña usando bcrypt
-    const validPassword = await bcrypt.compare(contraseña, cliente.contraseña);
-    if (!validPassword) {
-        return res.status(401).send({ message: 'Contraseña incorrecta' });
-    }
-
-    // Generar el token JWT
-    const token = jwt.sign(
-        { id: cliente._id, usuario: cliente.usuario },
-        process.env.JWT_SECRET || 'secret_key', 
-        { expiresIn: '1h' }
-    );
-
-    // Enviar el token y el clienteId al cliente
-    res.json({
-        message: 'Login exitoso',
-        token,
-        clienteId: cliente._id  // Enviar el ID del cliente
-    });
 }
 
 

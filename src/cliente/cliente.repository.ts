@@ -8,8 +8,9 @@ export class ClienteRepository implements Repository<Cliente> {
         return getORM().em.getRepository(Cliente);
     }
 
-    public async findAll(): Promise<Cliente[] | undefined> {
-        return await this.getRepo().findAll();
+    public async findAll(filters?: Record<string, any>): Promise<Cliente[] | undefined> {
+        const query = filters || {};
+        return await this.getRepo().find(query);
     }
 
     public async findOne(filter: { _id: ObjectId }): Promise<Cliente | undefined>;

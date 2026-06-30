@@ -32,7 +32,22 @@ function validateAndConvertId(id: string): ObjectId | null {
 }
 
 async function findAll(req: Request, res: Response) {
-    res.json({ data: await repository.findAll() });
+    const filters: Record<string, any> = {};
+    
+    // Filtro por estado
+    if (req.query.estado) {
+        filters.estado = req.query.estado;
+    }
+    
+    // Filtro por clienteId
+    if (req.query.clienteId) {
+        const clienteId = validateAndConvertId(req.query.clienteId as string);
+        if (clienteId) {
+            filters.clienteId = clienteId;
+        }
+    }
+    
+    res.json({ data: await repository.findAll(Object.keys(filters).length > 0 ? filters : undefined) });
 }
 
 async function findOne(req: Request, res: Response) {

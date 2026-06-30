@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
@@ -38,6 +39,7 @@ async function startServer() {
 
     app.listen(3000, () => {
       console.log('Server running on http://localhost:3000/');
+      console.log('Environment:', process.env.NODE_ENV);
     });
 
   } catch (error) {

@@ -8,8 +8,9 @@ export class ServicioRepository implements Repository<Servicio> {
         return getORM().em.getRepository(Servicio);
     }
 
-    public async findAll(): Promise<Servicio[] | undefined> {
-        return await this.getRepo().findAll();
+    public async findAll(filters?: Record<string, any>): Promise<Servicio[] | undefined> {
+        const query = filters || {};
+        return await this.getRepo().find(query);
     }
 
     public async findOne(item: { _id: ObjectId }): Promise<Servicio | undefined> {

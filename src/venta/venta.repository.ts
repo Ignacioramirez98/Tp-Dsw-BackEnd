@@ -8,8 +8,9 @@ export class VentaRepository implements Repository<Venta> {
         return getORM().em.getRepository(Venta);
     }
 
-    public async findAll(): Promise<Venta[] | undefined> {
-        return await this.getRepo().findAll();
+    public async findAll(filters?: Record<string, any>): Promise<Venta[] | undefined> {
+        const query = filters || {};
+        return await this.getRepo().find(query);
     }
 
     public async findOne(item: { _id: ObjectId }): Promise<Venta | undefined> {

@@ -29,7 +29,14 @@ function validateAndConvertId(id: string): ObjectId | null {
 }
 
 async function findAll(req: Request, res: Response) {
-    res.json({ data: await repository.findAll() });
+    const filters: Record<string, any> = {};
+    
+    // Filtro por descripción
+    if (req.query.descripcion) {
+        filters.descripcion = { $regex: req.query.descripcion, $options: 'i' };
+    }
+    
+    res.json({ data: await repository.findAll(Object.keys(filters).length > 0 ? filters : undefined) });
 }
 
 async function findOne(req: Request, res: Response) {

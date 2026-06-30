@@ -8,8 +8,9 @@ export class LocalidadRepository implements Repository<Localidad> {
         return getORM().em.getRepository(Localidad);
     }
 
-    public async findAll(): Promise<Localidad[] | undefined> {
-        return await this.getRepo().findAll();
+    public async findAll(filters?: Record<string, any>): Promise<Localidad[] | undefined> {
+        const query = filters || {};
+        return await this.getRepo().find(query);
     }
 
     public async findOne(item: { _id: ObjectId }): Promise<Localidad | undefined> {

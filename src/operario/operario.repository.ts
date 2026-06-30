@@ -8,8 +8,9 @@ export class OperarioRepository implements Repository<Operario> {
         return getORM().em.getRepository(Operario);
     }
 
-    public async findAll(): Promise<Operario[] | undefined> {
-        return await this.getRepo().findAll();
+    public async findAll(filters?: Record<string, any>): Promise<Operario[] | undefined> {
+        const query = filters || {};
+        return await this.getRepo().find(query);
     }
 
     public async findOne(item: { _id: ObjectId }): Promise<Operario | undefined> {
