@@ -1,6 +1,8 @@
 import 'reflect-metadata';
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import { usuarioRouter } from './usuario/usuario.routes.js';
 import { productoRouter } from './producto/producto.routes.js';
 import { vendedorRouter } from './Vendedor/vendedor.routes.js';
 import { localidadRouter } from './localidad/localidad.routes.js';
@@ -14,10 +16,15 @@ app.use(cors({
     origin: 'http://localhost:4200',
 }));
 app.use(express.json());
+// Servir archivos estáticos (imágenes, CSS, etc.)
+app.use(express.static('public'));
 async function startServer() {
     try {
         await initializeORM();
         console.log('Connected to MongoDB with MikroORM');
+        // Rutas de autenticación
+        app.use('/usuarios', usuarioRouter);
+        // Rutas de módulos de negocio
         app.use('/productos', productoRouter);
         app.use('/vendedores', vendedorRouter);
         app.use('/localidades', localidadRouter);
@@ -30,6 +37,7 @@ async function startServer() {
         });
         app.listen(3000, () => {
             console.log('Server running on http://localhost:3000/');
+            console.log('Environment:', process.env.NODE_ENV);
         });
     }
     catch (error) {

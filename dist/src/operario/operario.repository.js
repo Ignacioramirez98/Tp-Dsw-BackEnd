@@ -4,8 +4,9 @@ export class OperarioRepository {
     getRepo() {
         return getORM().em.getRepository(Operario);
     }
-    async findAll() {
-        return await this.getRepo().findAll();
+    async findAll(filters) {
+        const query = filters || {};
+        return await this.getRepo().find(query);
     }
     async findOne(item) {
         const result = await this.getRepo().findOne({ _id: item._id });

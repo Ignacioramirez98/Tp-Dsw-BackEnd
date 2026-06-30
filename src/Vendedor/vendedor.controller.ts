@@ -57,17 +57,13 @@ async function findOne(req: Request, res: Response) {
 async function add(req: Request, res: Response) {
     const input = req.body.sanitizedInput;
 
-    const hashedPassword = await bcrypt.hash(input.contraseña, 10);
-
     const vendedorInput = new Vendedor({
         nombre: input.nombre,
         apellido: input.apellido,
         mail: input.mail,
         dni: input.dni,
         telefono: input.telefono,
-        rol: input.rol,
-        usuario: input.usuario,
-        contraseña: hashedPassword
+        rol: input.rol
     });
 
     const vendedor = await repository.add(vendedorInput);

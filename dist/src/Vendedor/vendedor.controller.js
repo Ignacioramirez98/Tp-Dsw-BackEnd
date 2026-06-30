@@ -1,7 +1,6 @@
 import { VendedorRepository } from "../Vendedor/vendedor.repository.js";
 import { Vendedor } from "../Vendedor/vendedor.entity.js";
 import { ObjectId } from "mongodb"; // Importar ObjectId para la validación
-import bcrypt from "bcryptjs";
 const repository = new VendedorRepository();
 function sanitizeVendedorInput(req, res, next) {
     req.body.sanitizedInput = {
@@ -46,16 +45,13 @@ async function findOne(req, res) {
 }
 async function add(req, res) {
     const input = req.body.sanitizedInput;
-    const hashedPassword = await bcrypt.hash(input.contraseña, 10);
     const vendedorInput = new Vendedor({
         nombre: input.nombre,
         apellido: input.apellido,
         mail: input.mail,
         dni: input.dni,
         telefono: input.telefono,
-        rol: input.rol,
-        usuario: input.usuario,
-        contraseña: hashedPassword
+        rol: input.rol
     });
     const vendedor = await repository.add(vendedorInput);
     return res.status(201).send({ message: 'vendedor creado', data: vendedor });

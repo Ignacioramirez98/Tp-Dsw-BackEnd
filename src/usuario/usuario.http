@@ -1,0 +1,122 @@
+### ========================================
+### AUTENTICACIÓN UNIVERSAL - USUARIO
+### ========================================
+
+### 1. LOGIN - Cualquier rol (cliente, vendedor, operario)
+POST http://localhost:3000/usuarios/login
+Content-Type: application/json
+
+{
+  "usuario": "admin",
+  "contraseña": "admin123"
+}
+
+### Respuesta exitosa:
+# {
+#   "message": "Login exitoso",
+#   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+#   "data": {
+#     "usuarioId": "507f1f77bcf86cd799439011",
+#     "usuario": "vendedor_prueba",
+#     "rol": "vendedor",
+#     "vendedorId": "507f1f77bcf86cd799439012"
+#   }
+# }
+
+---
+
+### ========================================
+### GESTIÓN DE USUARIOS (Solo Admin)
+### ========================================
+
+### 2. Crear nuevo usuario (Admin)
+POST http://localhost:3000/usuarios
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "usuario": "vendedor_nuevo",
+  "contraseña": "VendPass123",
+  "rol": "vendedor",
+  "vendedorId": "507f1f77bcf86cd799439050"
+}
+
+### 3. Crear Cliente Usuario
+POST http://localhost:3000/usuarios
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhNDQzMTAzYTkxNTI1MzJkMDVjOTQxNyIsInVzdWFyaW8iOiJhZG1pbiIsInJvbCI6ImFkbWluIiwidXN1YXJpb0lkIjoiNmE0NDMxMDNhOTE1MjUzMmQwNWM5NDE3IiwiaWF0IjoxNzgyODU0MzY0LCJleHAiOjE3ODI4NTc5NjR9.VRqQJ-vAlGQSK1q26-wUPxFL46dOuKZg1p51mbXz5qc
+Content-Type: application/json
+
+{
+  "usuario": "cliente1",
+  "contraseña": "contraseña",
+  "rol": "cliente",
+  "clienteId": "6734593d7505f080c8f4e831"
+}
+
+### 4. Crear Operario Usuario
+POST http://localhost:3000/usuarios
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "usuario": "operario_nuevo",
+  "contraseña": "OpPass123",
+  "rol": "operario",
+  "operarioId": "507f1f77bcf86cd799439070"
+}
+
+---
+
+### 5. Obtener todos los usuarios (Admin)
+GET http://localhost:3000/usuarios
+Authorization: Bearer <admin_token>
+
+---
+
+### 6. Obtener usuario por ID (Admin)
+GET http://localhost:3000/usuarios/507f1f77bcf86cd799439011
+Authorization: Bearer <admin_token>
+
+---
+
+### 7. Desactivar usuario (Admin)
+PATCH http://localhost:3000/usuarios/507f1f77bcf86cd799439011/desactivar
+Authorization: Bearer <admin_token>
+
+---
+
+### ========================================
+### FLUJO COMPLETO DE EJEMPLO
+### ========================================
+
+### Paso 1: Login como vendedor
+POST http://localhost:3000/usuarios/login
+Content-Type: application/json
+
+{
+  "usuario": "vendedor_ejemplo",
+  "contraseña": "VendPass123"
+}
+
+### Respuesta: Obtiene token con rol='vendedor'
+
+### Paso 2: Usar token para acceder a rutas protegidas de vendedor
+GET http://localhost:3000/vendedores
+Authorization: Bearer <token_obtenido_en_paso_1>
+
+### Paso 3: Login como cliente
+POST http://localhost:3000/usuarios/login
+Content-Type: application/json
+
+{
+  "usuario": "cliente_ejemplo",
+  "contraseña": "ClientePass123"
+}
+
+### Respuesta: Obtiene token con rol='cliente'
+
+### Paso 4: Usar token para acceder a rutas de cliente
+GET http://localhost:3000/clientes
+Authorization: Bearer <token_obtenido_en_paso_3>
+
+---

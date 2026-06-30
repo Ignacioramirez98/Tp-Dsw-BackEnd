@@ -1,11 +1,14 @@
 import { Router } from 'express';
 import { sanitizeProductoInput, findAll, findOne, add, update, remove } from '../Producto/producto.controller.js';
-import { protectRoute } from '../middleware/auth.middleware.js';
+import { protectRoute, requireRole } from '../middleware/roleAuth.middleware.js';
+import { upload } from '../middleware/upload.middleware.js';
 export const productoRouter = Router();
-productoRouter.get('/', protectRoute, findAll);
-productoRouter.get('/:id', protectRoute, findOne);
-productoRouter.post('/', protectRoute, sanitizeProductoInput, add);
-productoRouter.put('/:id', protectRoute, sanitizeProductoInput, update);
-productoRouter.patch('/:id', protectRoute, sanitizeProductoInput, update);
-productoRouter.delete('/:id', protectRoute, remove);
+// Lectura de catálogo - permitido para cliente, vendedor y admin
+productoRouter.get('/', protectRoute, requireRole('cliente', 'vendedor', 'admin'), findAll);
+productoRouter.get('/:id', protectRoute, requireRole('cliente', 'vendedor', 'admin'), findOne);
+// Escritura - solo admin y vendedor
+productoRouter.post('/', protectRoute, requireRole('admin'), upload.single('imagen'), sanitizeProductoInput, add);
+productoRouter.put('/:id', protectRoute, requireRole('admin'), upload.single('imagen'), sanitizeProductoInput, update);
+productoRouter.patch('/:id', protectRoute, requireRole('admin'), upload.single('imagen'), sanitizeProductoInput, update);
+productoRouter.delete('/:id', protectRoute, requireRole('admin'), remove);
 //# sourceMappingURL=producto.routes.js.map

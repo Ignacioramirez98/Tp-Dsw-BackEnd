@@ -3,6 +3,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
+import { usuarioRouter } from './usuario/usuario.routes.js';
 import { productoRouter } from './producto/producto.routes.js';
 import { vendedorRouter } from './Vendedor/vendedor.routes.js';
 import { localidadRouter } from './localidad/localidad.routes.js';
@@ -28,6 +29,10 @@ async function startServer() {
     await initializeORM();
     console.log('Connected to MongoDB with MikroORM');
 
+    // Rutas de autenticación
+    app.use('/usuarios', usuarioRouter);
+
+    // Rutas de módulos de negocio
     app.use('/productos', productoRouter);
     app.use('/vendedores', vendedorRouter);
     app.use('/localidades', localidadRouter);

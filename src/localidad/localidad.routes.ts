@@ -4,8 +4,9 @@ import { protectRoute, requireRole } from '../middleware/roleAuth.middleware.js'
 
 export const localidadRouter = Router()
 
-localidadRouter.get('/', protectRoute, requireRole('vendedor', 'admin'), findAll);
-localidadRouter.get('/:id', protectRoute, requireRole('vendedor', 'admin'), findOne);
+// Lectura de catálogo - permitido para cliente, vendedor y admin
+localidadRouter.get('/', protectRoute, requireRole('cliente', 'vendedor', 'admin'), findAll);
+localidadRouter.get('/:id', protectRoute, requireRole('cliente', 'vendedor', 'admin'), findOne);
 localidadRouter.post('/', protectRoute, requireRole('admin'), sanitizeLocalidadInput, add);
 localidadRouter.put('/:id', protectRoute, requireRole('admin'), sanitizeLocalidadInput, update);
 localidadRouter.patch('/:id', protectRoute, requireRole('admin'), sanitizeLocalidadInput, update);

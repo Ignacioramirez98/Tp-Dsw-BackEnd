@@ -1,6 +1,7 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { Request } from 'express';
 
 // Crear carpeta de uploads si no existe
 const uploadDir = 'public/uploads';
@@ -10,10 +11,10 @@ if (!fs.existsSync(uploadDir)) {
 
 // Configurar almacenamiento
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
+    destination: (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
         cb(null, uploadDir);
     },
-    filename: (req, file, cb) => {
+    filename: (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
         const timestamp = Date.now();
         const ext = path.extname(file.originalname);
         const name = path.basename(file.originalname, ext);
@@ -22,7 +23,7 @@ const storage = multer.diskStorage({
 });
 
 // Filtro de archivos - solo imágenes
-const fileFilter = (req: any, file: any, cb: any) => {
+const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (allowedMimes.includes(file.mimetype)) {
         cb(null, true);

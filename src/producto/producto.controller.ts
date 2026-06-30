@@ -64,7 +64,7 @@ async function findOne(req: Request, res: Response) {
 
 async function add(req: Request, res: Response) {
     const input = req.body.sanitizedInput;
-    const imagenUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    const imagenUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
 
     const productoInput = new Producto({
         nombre: input.nombre,

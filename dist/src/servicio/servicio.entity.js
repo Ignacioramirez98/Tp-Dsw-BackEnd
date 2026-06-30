@@ -26,6 +26,10 @@ __decorate([
     Property(),
     __metadata("design:type", Number)
 ], Servicio.prototype, "importe_por_hora", void 0);
+__decorate([
+    Property({ nullable: true }),
+    __metadata("design:type", String)
+], Servicio.prototype, "imagenUrl", void 0);
 Servicio = __decorate([
     Entity({ collection: 'servicios' }),
     __metadata("design:paramtypes", [Object])

@@ -26,7 +26,19 @@ function validateAndConvertId(id) {
     return ObjectId.isValid(id) ? new ObjectId(id) : null;
 }
 async function findAll(req, res) {
-    res.json({ data: await repository.findAll() });
+    const filters = {};
+    // Filtro por estado
+    if (req.query.estado) {
+        filters.estado = req.query.estado;
+    }
+    // Filtro por clienteId
+    if (req.query.clienteId) {
+        const clienteId = validateAndConvertId(req.query.clienteId);
+        if (clienteId) {
+            filters.clienteId = clienteId;
+        }
+    }
+    res.json({ data: await repository.findAll(Object.keys(filters).length > 0 ? filters : undefined) });
 }
 async function findOne(req, res) {
     const { id } = req.params;

@@ -4,8 +4,9 @@ export class ClienteRepository {
     getRepo() {
         return getORM().em.getRepository(Cliente);
     }
-    async findAll() {
-        return await this.getRepo().findAll();
+    async findAll(filters) {
+        const query = filters || {};
+        return await this.getRepo().find(query);
     }
     async findOne(filter) {
         const result = await this.getRepo().findOne(filter);

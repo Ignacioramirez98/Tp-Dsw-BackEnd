@@ -25,7 +25,16 @@ function validateAndConvertId(id) {
     return null; // Retornar null si el id no es válido
 }
 async function findAll(req, res) {
-    res.json({ data: await repository.findAll() });
+    const filters = {};
+    // Filtro por nombre
+    if (req.query.nombre) {
+        filters.nombre = { $regex: req.query.nombre, $options: 'i' };
+    }
+    // Filtro por descripción
+    if (req.query.descripcion) {
+        filters.descripcion = { $regex: req.query.descripcion, $options: 'i' };
+    }
+    res.json({ data: await repository.findAll(Object.keys(filters).length > 0 ? filters : undefined) });
 }
 async function findOne(req, res) {
     const { id } = req.params;
@@ -42,12 +51,14 @@ async function findOne(req, res) {
 }
 async function add(req, res) {
     const input = req.body.sanitizedInput;
+    const imagenUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
     const productoInput = new Producto({
         nombre: input.nombre,
         descripcion: input.descripcion,
         importe_compra: input.importe_compra,
         importe_venta: input.importe_venta,
         stock: input.stock,
+        imagenUrl
     });
     const producto = await repository.add(productoInput);
     return res.status(201).send({ message: 'Producto creado', data: producto });
@@ -59,8 +70,13 @@ async function update(req, res) {
     if (!productoId) {
         return res.status(400).send({ message: 'ID inválido' });
     }
+    const updateData = req.body.sanitizedInput;
+    // Si hay archivo, agregar la URL de la imagen
+    if (req.file) {
+        updateData.imagenUrl = `/uploads/${req.file.filename}`;
+    }
     // Actualizar el producto con los datos sanitizados
-    const producto = await repository.update(productoId, req.body.sanitizedInput);
+    const producto = await repository.update(productoId, updateData);
     if (!producto) {
         return res.status(404).send({ message: 'Producto no encontrado' });
     }

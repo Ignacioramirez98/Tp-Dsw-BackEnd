@@ -47,13 +47,9 @@ __decorate([
     __metadata("design:type", String)
 ], Cliente.prototype, "razon_social", void 0);
 __decorate([
-    Property(),
+    Property({ nullable: true }),
     __metadata("design:type", String)
-], Cliente.prototype, "usuario", void 0);
-__decorate([
-    Property(),
-    __metadata("design:type", String)
-], Cliente.prototype, "contrase\u00F1a", void 0);
+], Cliente.prototype, "imagenUrl", void 0);
 Cliente = __decorate([
     Entity({ collection: 'clientes' }),
     __metadata("design:paramtypes", [Object])

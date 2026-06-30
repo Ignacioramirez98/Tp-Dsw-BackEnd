@@ -1,0 +1,99 @@
+### =================================
+### EJEMPLOS DE CARGA DE IMÁGENES
+### =================================
+
+### 1. Crear Producto con Imagen
+POST http://localhost:3000/productos
+Authorization: Bearer <token>
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="nombre"
+
+Arado de 3 cuerpos con vertedera regulable
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="descripcion"
+
+Arado de vertedera con 3 cuerpos, ajuste hidráulico, acero templado resistente al desgaste
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="importe_compra"
+
+8500.00
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="importe_venta"
+
+12800.00
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="stock"
+
+5
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="imagen"; filename="arado.jpg"
+Content-Type: image/jpeg
+
+< ./imagen-arado.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 2. Actualizar Producto con Nueva Imagen
+PUT http://localhost:3000/productos/507f1f77bcf86cd799439011
+Authorization: Bearer <token>
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="stock"
+
+8
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="imagen"; filename="arado-actualizado.jpg"
+Content-Type: image/jpeg
+
+< ./imagen-arado-actualizado.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 3. Crear Servicio con Imagen
+POST http://localhost:3000/servicios
+Authorization: Bearer <token>
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="descripcion"
+
+Reparación y mantenimiento de maquinaria agrícola
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="importe_por_hora"
+
+350.00
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="imagen"; filename="reparacion.jpg"
+Content-Type: image/jpeg
+
+< ./imagen-reparacion.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 4. Obtener Producto (incluye imagenUrl)
+GET http://localhost:3000/productos/507f1f77bcf86cd799439011
+Authorization: Bearer <token>
+
+### Respuesta:
+# {
+#   "data": {
+#     "_id": "507f1f77bcf86cd799439011",
+#     "nombre": "Arado de 3 cuerpos con vertedera regulable",
+#     "descripcion": "Arado de vertedera con 3 cuerpos, ajuste hidráulico, acero templado",
+#     "importe_venta": 12800.00,
+#     "stock": 5,
+#     "imagenUrl": "/uploads/1234567890-arado.jpg"
+#   }
+# }
+
+### 5. Acceder a la imagen desde el navegador o frontend
+GET http://localhost:3000/uploads/1234567890-arado.jpg
+
+### Nota:
+# - El token se obtiene de POST /clientes/login
+# - Las imágenes se guardan en: public/uploads/
+# - Los formatos soportados: JPEG, PNG, WEBP, GIF
+# - Tamaño máximo: 5MB
+# - La URL de la imagen se retorna en la propiedad imagenUrl
+# - Ejemplos de productos: Arado, Sembradora, Rastra, Pulverizador, Bomba de agua
+# - Ejemplos de servicios: Reparación, Mantenimiento, Instalación, Calibración

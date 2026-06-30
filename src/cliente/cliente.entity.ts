@@ -27,11 +27,8 @@ export class Cliente {
     @Property()
     razon_social!: string;
 
-    @Property()
-    usuario!: string;
-
-    @Property()
-    contraseña!: string;
+    @Property({ nullable: true })
+    imagenUrl?: string;
 
     constructor(data: Partial<Cliente> = {}) {
         Object.assign(this, data);

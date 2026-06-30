@@ -14,10 +14,7 @@ Content-Type: application/json
           "apellido": "Dominio",
           "mail": "cotidominio@gmail.com",
           "dni": "45681582",
-          "telefono": "3413457895",
-          "rol": "rol",
-          "usuario": "usuario",
-          "contraseña": "contraseña"
+          "telefono": "3413457895"
 }
 
 ### Modificar un vendedor (completo)

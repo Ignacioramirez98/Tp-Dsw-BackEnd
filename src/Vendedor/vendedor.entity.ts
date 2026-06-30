@@ -24,12 +24,6 @@ export class Vendedor {
     @Property()
     rol!: string;
 
-    @Property()
-    usuario!: string;
-
-    @Property()
-    contraseña!: string;
-
     constructor(data: Partial<Vendedor> = {}) {
         Object.assign(this, data);
     }

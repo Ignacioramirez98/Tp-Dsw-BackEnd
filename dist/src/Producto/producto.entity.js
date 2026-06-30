@@ -38,6 +38,10 @@ __decorate([
     Property(),
     __metadata("design:type", Number)
 ], Producto.prototype, "stock", void 0);
+__decorate([
+    Property({ nullable: true }),
+    __metadata("design:type", String)
+], Producto.prototype, "imagenUrl", void 0);
 Producto = __decorate([
     Entity({ collection: 'productos' }),
     __metadata("design:paramtypes", [Object])

@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { OperarioRepository } from "../operario/operario.repository.js";
 import { Operario } from "../operario/operario.entity.js";
-import multer from 'multer';
 import { ObjectId } from "mongodb";  // Importar ObjectId para la validación
 
 const repository = new OperarioRepository();
@@ -12,8 +11,7 @@ function sanitizeOperarioInput(req: Request, res: Response, next: NextFunction) 
         apellido: req.body.apellido,
         mail: req.body.mail,
         dni: req.body.dni,
-        telefono: req.body.telefono,
-        rol: req.body.rol,
+        telefono: req.body.telefono
     };
 
     Object.keys(req.body.sanitizedInput).forEach((key) => {
@@ -60,8 +58,7 @@ async function add(req: Request, res: Response) {
         apellido: input.apellido,
         mail: input.mail,
         dni: input.dni,
-        telefono: input.telefono,
-        rol: input.rol
+        telefono: input.telefono
     });
 
     const operario = await repository.add(operarioInput);

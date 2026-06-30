@@ -22,7 +22,12 @@ function validateAndConvertId(id) {
     return null; // Retornar null si el id no es válido
 }
 async function findAll(req, res) {
-    res.json({ data: await repository.findAll() });
+    const filters = {};
+    // Filtro por descripción
+    if (req.query.descripcion) {
+        filters.descripcion = { $regex: req.query.descripcion, $options: 'i' };
+    }
+    res.json({ data: await repository.findAll(Object.keys(filters).length > 0 ? filters : undefined) });
 }
 async function findOne(req, res) {
     const { id } = req.params;
@@ -39,9 +44,11 @@ async function findOne(req, res) {
 }
 async function add(req, res) {
     const input = req.body.sanitizedInput;
+    const imagenUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
     const servicioInput = new Servicio({
         descripcion: input.descripcion,
-        importe_por_hora: input.importe_por_hora
+        importe_por_hora: input.importe_por_hora,
+        imagenUrl
     });
     const servicio = await repository.add(servicioInput);
     return res.status(201).send({ message: 'servicio creado', data: servicio });
@@ -53,8 +60,13 @@ async function update(req, res) {
     if (!servicioId) {
         return res.status(400).send({ message: 'ID inválido' });
     }
+    const updateData = req.body.sanitizedInput;
+    // Si hay archivo, agregar la URL de la imagen
+    if (req.file) {
+        updateData.imagenUrl = `/uploads/${req.file.filename}`;
+    }
     // Actualizar el servicio con los datos sanitizados
-    const servicio = await repository.update(servicioId, req.body.sanitizedInput);
+    const servicio = await repository.update(servicioId, updateData);
     if (!servicio) {
         return res.status(404).send({ message: 'servicio no encontrado' });
     }

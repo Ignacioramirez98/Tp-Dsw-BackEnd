@@ -42,14 +42,6 @@ __decorate([
     Property(),
     __metadata("design:type", String)
 ], Vendedor.prototype, "rol", void 0);
-__decorate([
-    Property(),
-    __metadata("design:type", String)
-], Vendedor.prototype, "usuario", void 0);
-__decorate([
-    Property(),
-    __metadata("design:type", String)
-], Vendedor.prototype, "contrase\u00F1a", void 0);
 Vendedor = __decorate([
     Entity({ collection: 'vendedores' }),
     __metadata("design:paramtypes", [Object])

@@ -16,13 +16,11 @@ Content-Type: application/json
           "mail":"ig@com.ar",
           "telefono":"111111111",
           "direccion":"calle falsa 123",
-          "razon_social":"Mesa 12",
-          "usuario":"usuario",
-          "contraseña":"contraseña"
+          "razon_social":"Mesa 12"
 }
 
 ### Modificar un cliente (completo)
-PUT http://localhost:3000/clientes/
+PUT http://localhost:3000/clientes/672daac323a2c9f8e48eabc3
 Content-Type: application/json
 
 {
@@ -32,9 +30,7 @@ Content-Type: application/json
           "mail":"co@com.ar",
           "telefono":"22222222",
           "direccion":"calle falsa 144",
-          "razon_social":"Mesa 10",
-          "usuario":"UsuarioNacho",
-          "razon_social":"contraseña"
+          "razon_social":"Mesa 10"
 }
 
 ### Modificar un cliente (parcial)

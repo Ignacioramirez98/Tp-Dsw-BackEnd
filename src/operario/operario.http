@@ -14,8 +14,7 @@ Content-Type: application/json
           "apellido": "apellidoPrueba",
           "mail": "coti.com",
           "dni": 44444444,
-          "telefono": 555,
-          "rol": "a"
+          "telefono": 555
 }
 
 ### Modificar un operario (completo)
@@ -27,8 +26,7 @@ Content-Type: application/json
           "apellido": "apellidoModificado",
           "mail": "cotidom.com",
           "dni": 44444000,
-          "telefono": 666,
-          "rol": "b"
+          "telefono": 666
 }
 
 ### Modificar un operario (parcial)

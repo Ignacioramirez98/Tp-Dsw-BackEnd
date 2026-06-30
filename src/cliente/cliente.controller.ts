@@ -2,9 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { ClienteRepository } from "../cliente/cliente.repository.js";
 import { Cliente } from "../cliente/cliente.entity.js";
 import { ObjectId } from "mongodb";  // Importar ObjectId para la validación
-import bcrypt from "bcryptjs";  // Importar bcryptjs para comparar contraseñas
-import jwt from "jsonwebtoken";  // Importar jsonwebtoken para generar el token
-import { createClienteSchema, loginSchema } from "../validators/cliente.validator.js";
+import { createClienteSchema } from "../validators/cliente.validator.js";
 
 const repository = new ClienteRepository();
 
@@ -79,7 +77,6 @@ async function add(req: Request, res: Response) {
 
     try {
         const validated = createClienteSchema.parse(input);
-        const hashedPassword = await bcrypt.hash(validated.contraseña, 10);
 
         const clienteInput = new Cliente({
             nombre: validated.nombre,
@@ -88,9 +85,7 @@ async function add(req: Request, res: Response) {
             mail: validated.mail,
             telefono: validated.telefono,
             direccion: validated.direccion,
-            razon_social: validated.razon_social || "",
-            usuario: validated.usuario,
-            contraseña: hashedPassword
+            razon_social: validated.razon_social || ""
         });
 
         const cliente = await repository.add(clienteInput);
@@ -140,46 +135,4 @@ async function remove(req: Request, res: Response) {
     return res.status(200).send({ message: 'cliente eliminado exitosamente' });
 }
 
-// Lógica para el login del cliente
-async function login(req: Request, res: Response) {
-    const { usuario, contraseña } = req.body;
-
-    try {
-        const validated = loginSchema.parse({ usuario, contraseña });
-
-        // Buscar al cliente por el nombre de usuario
-        const cliente = await repository.findOne({ usuario: validated.usuario });
-        if (!cliente) {
-            return res.status(404).send({ message: 'Usuario no encontrado' });
-        }
-
-        // Verificar la contraseña usando bcrypt
-        const validPassword = await bcrypt.compare(validated.contraseña, cliente.contraseña);
-        if (!validPassword) {
-            return res.status(401).send({ message: 'Contraseña incorrecta' });
-        }
-
-        // Generar el token JWT con rol
-        const token = jwt.sign(
-            { id: cliente._id, usuario: cliente.usuario, rol: 'cliente' },
-            process.env.JWT_SECRET || 'secret_key', 
-            { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
-        );
-
-        // Enviar el token y el clienteId al cliente
-        res.json({
-            message: 'Login exitoso',
-            token,
-            clienteId: cliente._id,
-            rol: 'cliente'
-        });
-    } catch (error: any) {
-        if (error.name === 'ZodError') {
-            return res.status(400).send({ message: 'Validación fallida', errors: error.errors });
-        }
-        return res.status(500).send({ message: 'Error al iniciar sesión' });
-    }
-}
-
-
-export { sanitizeClienteInput, findAll, findOne, add, update, remove, login };
+export { sanitizeClienteInput, findAll, findOne, add, update, remove };

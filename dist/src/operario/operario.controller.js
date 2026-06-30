@@ -8,8 +8,7 @@ function sanitizeOperarioInput(req, res, next) {
         apellido: req.body.apellido,
         mail: req.body.mail,
         dni: req.body.dni,
-        telefono: req.body.telefono,
-        rol: req.body.rol,
+        telefono: req.body.telefono
     };
     Object.keys(req.body.sanitizedInput).forEach((key) => {
         if (req.body.sanitizedInput[key] === undefined) {
@@ -48,8 +47,7 @@ async function add(req, res) {
         apellido: input.apellido,
         mail: input.mail,
         dni: input.dni,
-        telefono: input.telefono,
-        rol: input.rol
+        telefono: input.telefono
     });
     const operario = await repository.add(operarioInput);
     return res.status(201).send({ message: 'operario creado', data: operario });

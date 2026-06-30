@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { ServicioRepository } from "../servicio/servicio.repository.js";
 import { Servicio } from "../servicio/servicio.entity.js";
-import multer from 'multer';
 import { ObjectId } from "mongodb";  // Importar ObjectId para la validación
 
 const repository = new ServicioRepository();
@@ -57,7 +56,7 @@ async function findOne(req: Request, res: Response) {
 
 async function add(req: Request, res: Response) {
     const input = req.body.sanitizedInput;
-    const imagenUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    const imagenUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
 
     const servicioInput = new Servicio({
         descripcion: input.descripcion,
