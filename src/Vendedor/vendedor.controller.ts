@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { VendedorRepository } from "../Vendedor/vendedor.repository.js";
 import { Vendedor } from "../Vendedor/vendedor.entity.js";
 import { ObjectId } from "mongodb";  // Importar ObjectId para la validación
+import bcrypt from "bcryptjs";
 
 const repository = new VendedorRepository();
 
@@ -56,16 +57,18 @@ async function findOne(req: Request, res: Response) {
 async function add(req: Request, res: Response) {
     const input = req.body.sanitizedInput;
 
-    const vendedorInput = new Vendedor(
-        input.nombre,
-        input.apellido,
-        input.mail,
-        input.dni,
-        input.telefono,
-        input.rol,
-        input.usuario,
-        input.contraseña
-    );
+    const hashedPassword = await bcrypt.hash(input.contraseña, 10);
+
+    const vendedorInput = new Vendedor({
+        nombre: input.nombre,
+        apellido: input.apellido,
+        mail: input.mail,
+        dni: input.dni,
+        telefono: input.telefono,
+        rol: input.rol,
+        usuario: input.usuario,
+        contraseña: hashedPassword
+    });
 
     const vendedor = await repository.add(vendedorInput);
     return res.status(201).send({ message: 'vendedor creado', data: vendedor });

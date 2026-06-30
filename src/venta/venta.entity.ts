@@ -1,17 +1,36 @@
-import { ObjectId } from "mongodb";
-import { Producto } from "../Producto/producto.entity.js";
-import { Servicio } from "../servicio/servicio.entity.js";  
-import { Cliente } from "../cliente/cliente.entity.js";  
+import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import { ObjectId } from 'mongodb';
+
+@Entity({ collection: 'ventas' })
 export class Venta {
-  constructor(
-    public estado: string,
-    public fechaContacto: Date,
-    public fechaDeVenta: Date,
-    public fechaEntrega: Date,
-    public fechaCancelacion: Date | undefined | null,
-    public cliente: Cliente,
-    public productos: Producto[],  // Colección de productos
-    public servicios: Servicio[],  // Colección de servicios
-    public _id?: ObjectId
-  ) {}
+    @PrimaryKey()
+    _id!: ObjectId;
+
+    @Property()
+    estado!: string;
+
+    @Property()
+    fechaContacto!: Date;
+
+    @Property()
+    fechaDeVenta!: Date;
+
+    @Property()
+    fechaEntrega!: Date;
+
+    @Property({ nullable: true })
+    fechaCancelacion?: Date | null;
+
+    @Property()
+    clienteId!: ObjectId;
+
+    @Property()
+    productoIds!: ObjectId[];
+
+    @Property()
+    servicioIds!: ObjectId[];
+
+    constructor(data: Partial<Venta> = {}) {
+        Object.assign(this, data);
+    }
 }

@@ -1,16 +1,39 @@
-import { ObjectId } from "mongodb";
+import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import { ObjectId } from 'mongodb';
 
+@Entity({ collection: 'clientes' })
 export class Cliente {
-    constructor(
-        public nombre: string,
-        public apellido: string,
-        public dni: string,
-        public mail: string,
-        public telefono: string,
-        public direccion: string,
-        public razon_social: string,
-        public usuario: string,
-        public contraseña: string,
-        public _id?: ObjectId
-    ) {}
+    @PrimaryKey()
+    _id!: ObjectId;
+
+    @Property()
+    nombre!: string;
+
+    @Property()
+    apellido!: string;
+
+    @Property()
+    dni!: string;
+
+    @Property()
+    mail!: string;
+
+    @Property()
+    telefono!: string;
+
+    @Property()
+    direccion!: string;
+
+    @Property()
+    razon_social!: string;
+
+    @Property()
+    usuario!: string;
+
+    @Property()
+    contraseña!: string;
+
+    constructor(data: Partial<Cliente> = {}) {
+        Object.assign(this, data);
+    }
 }

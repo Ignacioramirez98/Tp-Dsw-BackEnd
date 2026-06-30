@@ -1,9 +1,18 @@
-import { ObjectId } from "mongodb";
+import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import { ObjectId } from 'mongodb';
 
+@Entity({ collection: 'localidades' })
 export class Localidad {
-    constructor(
-        public nombre: string,
-        public codigo_postal: string,
-        public _id?: ObjectId
-    ) { }
+    @PrimaryKey()
+    _id!: ObjectId;
+
+    @Property()
+    nombre!: string;
+
+    @Property()
+    codigo_postal!: string;
+
+    constructor(data: Partial<Localidad> = {}) {
+        Object.assign(this, data);
+    }
 }

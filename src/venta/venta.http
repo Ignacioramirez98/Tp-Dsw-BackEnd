@@ -10,34 +10,39 @@ POST http://localhost:3000/ventas
 Content-Type: application/json
 
 {
-          "estado": "Finalizada",
-          "fechaContacto": "15-08-24",
-          "fechaDeVenta": "03-09-24",
-          "fechaEntrega": "03-09-24",
-          "fechaCancelacion": "-",
+    "estado": "En proceso",
+    "fechaContacto": "2024-08-15",
+    "fechaDeVenta": "2024-09-03",
+    "fechaEntrega": "2024-09-10",
+    "fechaCancelacion": null,
+    "clienteId": "672daac323a2c9f8e48eabc3",
+    "productoIds": ["672daac323a2c9f8e48eabc4", "672daac323a2c9f8e48eabc5"],
+    "servicioIds": ["672daac323a2c9f8e48eabc6"]
 }
 
 ### Modificar una venta (completo)
-PUT http://localhost:3000/venta/669874787690bc5f60d711fd
+PUT http://localhost:3000/ventas/669874787690bc5f60d711fd
 Content-Type: application/json
 
 {
-  "estado": "En proceso",
-  "fechaContacto": "16-08-24",
-  "fechaDeVenta": "-",
-  "fechaEntrega": "-",
-  "fechaCancelacion": "-",
-  "cantidad": "1"
+    "estado": "Finalizada",
+    "fechaContacto": "2024-08-16",
+    "fechaDeVenta": "2024-09-03",
+    "fechaEntrega": "2024-09-10",
+    "fechaCancelacion": null,
+    "clienteId": "672daac323a2c9f8e48eabc3",
+    "productoIds": ["672daac323a2c9f8e48eabc4"],
+    "servicioIds": []
 }
 
 ### Modificar una venta (parcial)
-PATCH http://localhost:3000/venta/669874787690bc5f60d711fd
+PATCH http://localhost:3000/ventas/669874787690bc5f60d711fd
 Content-Type: application/json
 
 {
-  "cantidad": "6"
+    "estado": "Cancelada",
+    "fechaCancelacion": "2024-09-05"
 }
 
-
 ### Borrar una venta
-DELETE http://localhost:3000/venta/669878c25647790e562e97a5
+DELETE http://localhost:3000/ventas/669878c25647790e562e97a5

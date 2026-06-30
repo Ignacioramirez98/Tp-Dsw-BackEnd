@@ -1,41 +1,45 @@
 import { Repository } from "../shared/repository.js";
 import { Localidad } from "../localidad/localidad.entity.js";
-import { db } from '../shared/db/conn.js';
+import { getORM } from '../shared/db/conn.js';
 import { ObjectId } from "mongodb";
 
-const localidades = db.collection<Localidad>('localidades');
-
 export class LocalidadRepository implements Repository<Localidad> {
-    
+    getRepo() {
+        return getORM().em.getRepository(Localidad);
+    }
+
     public async findAll(): Promise<Localidad[] | undefined> {
-        return await localidades.find().toArray();
+        return await this.getRepo().findAll();
     }
 
     public async findOne(item: { _id: ObjectId }): Promise<Localidad | undefined> {
-        // Usamos el _id directamente
-        return (await localidades.findOne({ _id: item._id })) || undefined;
+        const result = await this.getRepo().findOne({ _id: item._id });
+        return result ?? undefined;
     }
 
     public async add(item: Localidad): Promise<Localidad | undefined> {
-        item._id = (await localidades.insertOne(item)).insertedId;
-        return item;
+        const em = getORM().em.fork();
+        const localidad = em.create(Localidad, item);
+        await em.flush();
+        return localidad;
     }
 
-public async update(id: ObjectId, item: Localidad): Promise<Localidad | undefined> {
-    const _id = new ObjectId(id);
-    const result = await localidades.updateOne({ _id }, { $set: item });
+    public async update(id: ObjectId, item: Localidad): Promise<Localidad | undefined> {
+        const em = getORM().em.fork();
+        const localidad = await em.getRepository(Localidad).findOne({ _id: id });
+        if (!localidad) return undefined;
 
-    if (result.modifiedCount === 1) {
-        // Retornamos el Localidad actualizado si se realizó la modificación
-        return await localidades.findOne({ _id }) || undefined;
+        Object.assign(localidad, item);
+        await em.flush();
+        return localidad;
     }
-    return undefined;
-}
 
-public async delete(item: { _id: ObjectId }): Promise<Localidad | undefined> {
-    const result = await localidades.findOneAndDelete({ _id: item._id });
-    return result ? result as Localidad : undefined;
-}
+    public async delete(item: { _id: ObjectId }): Promise<Localidad | undefined> {
+        const em = getORM().em.fork();
+        const localidad = await em.getRepository(Localidad).findOne({ _id: item._id });
+        if (!localidad) return undefined;
 
-
+        await em.remove(localidad).flush();
+        return localidad;
+    }
 }

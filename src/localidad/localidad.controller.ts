@@ -51,10 +51,10 @@ async function findOne(req: Request, res: Response) {
 async function add(req: Request, res: Response) {
     const input = req.body.sanitizedInput;
 
-    const localidadInput = new Localidad(
-        input.nombre,
-        input.codigo_postal,
-    );
+    const localidadInput = new Localidad({
+        nombre: input.nombre,
+        codigo_postal: input.codigo_postal
+    });
 
     const localidad = await repository.add(localidadInput);
     return res.status(201).send({ message: 'localidad creado', data: localidad });

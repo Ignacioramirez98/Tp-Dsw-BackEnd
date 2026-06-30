@@ -1,41 +1,45 @@
 import { Repository } from "../shared/repository.js";
-import { Venta } from "../venta/venta.entity.js";
-import { db } from '../shared/db/conn.js';
+import { Venta } from "./venta.entity.js";
+import { getORM } from '../shared/db/conn.js';
 import { ObjectId } from "mongodb";
 
-const ventas = db.collection<Venta>('ventas');
-
 export class VentaRepository implements Repository<Venta> {
-    
+    getRepo() {
+        return getORM().em.getRepository(Venta);
+    }
+
     public async findAll(): Promise<Venta[] | undefined> {
-        return await ventas.find().toArray();
+        return await this.getRepo().findAll();
     }
 
     public async findOne(item: { _id: ObjectId }): Promise<Venta | undefined> {
-        // Usamos el _id directamente
-        return (await ventas.findOne({ _id: item._id })) || undefined;
+        const result = await this.getRepo().findOne({ _id: item._id });
+        return result ?? undefined;
     }
 
     public async add(item: Venta): Promise<Venta | undefined> {
-        item._id = (await ventas.insertOne(item)).insertedId;
-        return item;
+        const em = getORM().em.fork();
+        const venta = em.create(Venta, item);
+        await em.flush();
+        return venta;
     }
 
-public async update(id: ObjectId, item: Venta): Promise<Venta | undefined> {
-    const _id = new ObjectId(id);
-    const result = await ventas.updateOne({ _id }, { $set: item });
+    public async update(id: ObjectId, item: Venta): Promise<Venta | undefined> {
+        const em = getORM().em.fork();
+        const venta = await em.getRepository(Venta).findOne({ _id: id });
+        if (!venta) return undefined;
 
-    if (result.modifiedCount === 1) {
-        // Retornamos el Venta actualizado si se realizó la modificación
-        return await ventas.findOne({ _id }) || undefined;
+        Object.assign(venta, item);
+        await em.flush();
+        return venta;
     }
-    return undefined;
-}
 
-public async delete(item: { _id: ObjectId }): Promise<Venta | undefined> {
-    const result = await ventas.findOneAndDelete({ _id: item._id });
-    return result ? result as Venta : undefined;
-}
+    public async delete(item: { _id: ObjectId }): Promise<Venta | undefined> {
+        const em = getORM().em.fork();
+        const venta = await em.getRepository(Venta).findOne({ _id: item._id });
+        if (!venta) return undefined;
 
-
+        await em.remove(venta).flush();
+        return venta;
+    }
 }

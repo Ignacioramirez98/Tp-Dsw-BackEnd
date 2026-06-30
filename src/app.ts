@@ -1,36 +1,29 @@
+import 'reflect-metadata';
 import express from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
-import { MongoClient, Db } from 'mongodb';
-import { productoRouter } from './Producto/producto.routes.js';
+import { productoRouter } from './producto/producto.routes.js';
 import { vendedorRouter } from './Vendedor/vendedor.routes.js';
 import { localidadRouter } from './localidad/localidad.routes.js';
 import { clienteRouter } from './cliente/cliente.routes.js';
 import { servicioRouter } from './servicio/servicio.routes.js';
 import { ventaRouter } from './venta/venta.routes.js';
 import { operarioRouter } from './operario/operario.routes.js';
-
-// URL de conexión a MongoDB
-const connectionStr = process.env.MONGO_URI || 'mongodb+srv://nacho98nacho98:dsw123@cluster0.z5xdoug.mongodb.net/';
-const cli = new MongoClient(connectionStr);
+import { initializeORM } from './shared/db/conn.js';
 
 const app = express();
 
-// Configuración de CORS
 app.use(cors({
   origin: 'http://localhost:4200',
 }));
 
-// Middleware para parsear JSON
 app.use(express.json());
 
-// Conectar a MongoDB y luego iniciar el servidor Express
 async function startServer() {
   try {
-    await cli.connect();  // Conexión a MongoDB
-    console.log('Connected to MongoDB');
-    
-    // Una vez conectado, iniciar el servidor
+    await initializeORM();
+    console.log('Connected to MongoDB with MikroORM');
+
     app.use('/productos', productoRouter);
     app.use('/vendedores', vendedorRouter);
     app.use('/localidades', localidadRouter);
@@ -49,7 +42,8 @@ async function startServer() {
 
   } catch (error) {
     console.error('Error connecting to MongoDB:', error);
+    process.exit(1);
   }
 }
 
-startServer(); // Llamamos a la función para iniciar el servidor después de la conexión
+startServer();

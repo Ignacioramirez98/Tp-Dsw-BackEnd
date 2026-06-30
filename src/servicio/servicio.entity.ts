@@ -1,10 +1,18 @@
-import { ObjectId } from "mongodb";
+import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import { ObjectId } from 'mongodb';
 
-export class Servicio 
-{
-    constructor(
-        public descripcion : string,
-        public importe_por_hora : number,
-        public _id?: ObjectId
-    ){}
+@Entity({ collection: 'servicios' })
+export class Servicio {
+    @PrimaryKey()
+    _id!: ObjectId;
+
+    @Property()
+    descripcion!: string;
+
+    @Property()
+    importe_por_hora!: number;
+
+    constructor(data: Partial<Servicio> = {}) {
+        Object.assign(this, data);
+    }
 }

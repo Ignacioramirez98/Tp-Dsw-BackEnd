@@ -8,7 +8,6 @@ const repository = new ServicioRepository();
 
 function sanitizeServicioInput(req: Request, res: Response, next: NextFunction) {
     req.body.sanitizedInput = {
-        idServicio: req.body.idServicio,
         descripcion: req.body.descripcion,
         importe_por_hora: req.body.importe_por_hora,
     };
@@ -52,11 +51,10 @@ async function findOne(req: Request, res: Response) {
 async function add(req: Request, res: Response) {
     const input = req.body.sanitizedInput;
 
-    const servicioInput = new Servicio(
-        input.idServicio,        
-        input.descripcion,
-        input.importe_por_hora
-    );
+    const servicioInput = new Servicio({
+        descripcion: input.descripcion,
+        importe_por_hora: input.importe_por_hora
+    });
 
     const servicio = await repository.add(servicioInput);
     return res.status(201).send({ message: 'servicio creado', data: servicio });

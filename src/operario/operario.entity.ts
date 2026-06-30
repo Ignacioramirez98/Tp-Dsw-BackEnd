@@ -1,14 +1,30 @@
-import { ObjectId } from "mongodb";
+import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import { ObjectId } from 'mongodb';
 
-export class Operario 
-{
-    constructor(
-        public nombre : string,
-        public apellido : string,
-        public mail : string,
-        public dni : number,
-        public telefono : string,
-        public rol : string,
-        public _id?: ObjectId
-    ){}
+@Entity({ collection: 'operarios' })
+export class Operario {
+    @PrimaryKey()
+    _id!: ObjectId;
+
+    @Property()
+    nombre!: string;
+
+    @Property()
+    apellido!: string;
+
+    @Property()
+    mail!: string;
+
+    @Property()
+    dni!: number;
+
+    @Property()
+    telefono!: string;
+
+    @Property()
+    rol!: string;
+
+    constructor(data: Partial<Operario> = {}) {
+        Object.assign(this, data);
+    }
 }

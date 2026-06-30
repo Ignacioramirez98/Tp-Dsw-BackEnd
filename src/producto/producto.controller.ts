@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { ProductoRepository } from "../Producto/producto.repository.js";
-import { Producto } from "../Producto/producto.entity.js";
+import { ProductoRepository } from "./producto.repository.js";
+import { Producto } from "./producto.entity.js";
 import { ObjectId } from "mongodb";  // Importar ObjectId para la validación
 
 const repository = new ProductoRepository();
@@ -53,13 +53,13 @@ async function findOne(req: Request, res: Response) {
 async function add(req: Request, res: Response) {
     const input = req.body.sanitizedInput;
 
-    const productoInput = new Producto(
-        input.nombre,
-        input.descripcion,
-        input.importe_compra,
-        input.importe_venta,
-        input.stock,
-    );
+    const productoInput = new Producto({
+        nombre: input.nombre,
+        descripcion: input.descripcion,
+        importe_compra: input.importe_compra,
+        importe_venta: input.importe_venta,
+        stock: input.stock,
+    });
 
     const producto = await repository.add(productoInput);
     return res.status(201).send({ message: 'Producto creado', data: producto });

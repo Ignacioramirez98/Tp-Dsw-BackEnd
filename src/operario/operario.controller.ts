@@ -55,14 +55,14 @@ async function findOne(req: Request, res: Response) {
 async function add(req: Request, res: Response) {
     const input = req.body.sanitizedInput;
 
-    const operarioInput = new Operario(
-        input.nombre,        
-        input.apellido,
-        input.mail,
-        input.dni,
-        input.telefono,
-        input.rol
-    );
+    const operarioInput = new Operario({
+        nombre: input.nombre,
+        apellido: input.apellido,
+        mail: input.mail,
+        dni: input.dni,
+        telefono: input.telefono,
+        rol: input.rol
+    });
 
     const operario = await repository.add(operarioInput);
     return res.status(201).send({ message: 'operario creado', data: operario });

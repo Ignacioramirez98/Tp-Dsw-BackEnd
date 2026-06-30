@@ -61,17 +61,17 @@ async function add(req: Request, res: Response) {
 
     const hashedPassword = await bcrypt.hash(input.contraseña, 10);  // 10 es el número de "salts"
 
-    const clienteInput = new Cliente(
-        input.nombre,
-        input.apellido,
-        input.dni,
-        input.mail,
-        input.telefono,
-        input.direccion,
-        input.razon_social,
-        input.usuario,
-        hashedPassword
-    );
+    const clienteInput = new Cliente({
+        nombre: input.nombre,
+        apellido: input.apellido,
+        dni: input.dni,
+        mail: input.mail,
+        telefono: input.telefono,
+        direccion: input.direccion,
+        razon_social: input.razon_social,
+        usuario: input.usuario,
+        contraseña: hashedPassword
+    });
 
     const cliente = await repository.add(clienteInput);
     return res.status(201).send({ message: 'cliente creado', data: cliente });

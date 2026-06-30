@@ -1,14 +1,24 @@
-import { MongoClient, Db } from "mongodb";
+import { MikroORM } from '@mikro-orm/core';
+import { MongoDriver } from '@mikro-orm/mongodb';
+import type config from '../../../mikro-orm.config.js';
 
-const connectionStr = process.env.MONGO_URI || 'mongodb+srv://nacho98nacho98:dsw123@cluster0.z5xdoug.mongodb.net/';
+let orm: MikroORM<MongoDriver> | null = null;
 
-const cli = new MongoClient(connectionStr);
+export async function initializeORM(): Promise<MikroORM<MongoDriver>> {
+    if (orm) return orm;
 
-try {
-  await cli.connect();
-  console.log('Connected to MongoDB');
-} catch (error) {
-  console.error('Error connecting to MongoDB:', error);
+    const ormConfig = await import('../../../mikro-orm.config.js');
+    orm = await MikroORM.init<MongoDriver>(ormConfig.default);
+    return orm;
 }
 
-export let db:Db = cli.db('crm');
+export function getORM(): MikroORM<MongoDriver> {
+    if (!orm) throw new Error('ORM not initialized');
+    return orm;
+}
+
+export const getEM = () => {
+    const instance = getORM();
+    return instance.em.fork();
+};
+
