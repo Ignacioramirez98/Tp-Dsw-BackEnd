@@ -2,7 +2,6 @@ import 'reflect-metadata';
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import jwt from 'jsonwebtoken';
 import { usuarioRouter } from './usuario/usuario.routes.js';
 import { productoRouter } from './producto/producto.routes.js';
 import { vendedorRouter } from './Vendedor/vendedor.routes.js';
@@ -16,7 +15,8 @@ import { initializeORM } from './shared/db/conn.js';
 const app = express();
 
 app.use(cors({
-  origin: 'http://localhost:4200',
+  origin: process.env.FRONTEND_URL || 'http://localhost:4200',
+  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
 }));
 
 app.use(express.json());

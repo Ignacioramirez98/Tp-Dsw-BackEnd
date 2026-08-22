@@ -12,6 +12,7 @@ export function getORM() {
         throw new Error('ORM not initialized');
     return orm;
 }
+//entity manager
 export const getEM = () => {
     const instance = getORM();
     return instance.em.fork();

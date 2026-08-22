@@ -18,6 +18,11 @@ export class VentaRepository implements Repository<Venta> {
         return result ?? undefined;
     }
 
+    public async hasProducto(productoId: ObjectId): Promise<boolean> {
+        const venta = await this.getRepo().findOne({ productoIds: productoId } as any);
+        return venta !== null;
+    }
+
     public async add(item: Venta): Promise<Venta | undefined> {
         const em = getORM().em.fork();
         const venta = em.create(Venta, item);
