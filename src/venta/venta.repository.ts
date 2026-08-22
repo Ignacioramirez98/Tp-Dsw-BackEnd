@@ -23,6 +23,11 @@ export class VentaRepository implements Repository<Venta> {
         return venta !== null;
     }
 
+    public async hasServicio(servicioId: ObjectId): Promise<boolean> {
+        const venta = await this.getRepo().findOne({ servicioIds: servicioId } as any);
+        return venta !== null;
+    }
+
     public async add(item: Venta): Promise<Venta | undefined> {
         const em = getORM().em.fork();
         const venta = em.create(Venta, item);

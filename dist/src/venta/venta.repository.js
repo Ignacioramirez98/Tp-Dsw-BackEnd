@@ -16,6 +16,10 @@ export class VentaRepository {
         const venta = await this.getRepo().findOne({ productoIds: productoId });
         return venta !== null;
     }
+    async hasServicio(servicioId) {
+        const venta = await this.getRepo().findOne({ servicioIds: servicioId });
+        return venta !== null;
+    }
     async add(item) {
         const em = getORM().em.fork();
         const venta = em.create(Venta, item);
