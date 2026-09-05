@@ -1,6 +1,5 @@
 import { MikroORM } from '@mikro-orm/core';
 import { MongoDriver } from '@mikro-orm/mongodb';
-import type config from '../../../mikro-orm.config.js';
 
 let orm: MikroORM<MongoDriver> | null = null;
 
@@ -17,6 +16,7 @@ export function getORM(): MikroORM<MongoDriver> {
     return orm;
 }
 
+//entity manager
 export const getEM = () => {
     const instance = getORM();
     return instance.em.fork();

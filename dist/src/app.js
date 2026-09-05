@@ -13,7 +13,8 @@ import { operarioRouter } from './operario/operario.routes.js';
 import { initializeORM } from './shared/db/conn.js';
 const app = express();
 app.use(cors({
-    origin: 'http://localhost:4200',
+    origin: process.env.FRONTEND_URL || 'http://localhost:4200',
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
 }));
 app.use(express.json());
 // Servir archivos estáticos (imágenes, CSS, etc.)

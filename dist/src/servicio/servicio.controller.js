@@ -1,7 +1,9 @@
 import { ServicioRepository } from "../servicio/servicio.repository.js";
 import { Servicio } from "../servicio/servicio.entity.js";
+import { VentaRepository } from "../venta/venta.repository.js";
 import { ObjectId } from "mongodb"; // Importar ObjectId para la validación
 const repository = new ServicioRepository();
+const ventaRepository = new VentaRepository();
 function sanitizeServicioInput(req, res, next) {
     req.body.sanitizedInput = {
         descripcion: req.body.descripcion,
@@ -78,6 +80,13 @@ async function remove(req, res) {
     const servicioId = validateAndConvertId(id);
     if (!servicioId) {
         return res.status(400).send({ message: 'ID inválido' });
+    }
+    const servicioExistente = await repository.findOne({ _id: servicioId });
+    if (!servicioExistente) {
+        return res.status(404).send({ message: 'servicio no encontrado' });
+    }
+    if (await ventaRepository.hasServicio(servicioId)) {
+        return res.status(409).send({ message: 'No se puede eliminar el servicio porque está asociado a una venta' });
     }
     const servicio = await repository.delete({ _id: servicioId });
     if (!servicio) {

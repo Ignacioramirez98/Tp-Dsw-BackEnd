@@ -1,7 +1,9 @@
 import { ProductoRepository } from "./producto.repository.js";
 import { Producto } from "./producto.entity.js";
+import { VentaRepository } from "../venta/venta.repository.js";
 import { ObjectId } from "mongodb"; // Importar ObjectId para la validación
 const repository = new ProductoRepository();
+const ventaRepository = new VentaRepository();
 function sanitizeProductoInput(req, res, next) {
     req.body.sanitizedInput = {
         nombre: req.body.nombre,
@@ -89,10 +91,16 @@ async function remove(req, res) {
     if (!productoId) {
         return res.status(400).send({ message: 'ID inválido' });
     }
-    const producto = await repository.delete({ _id: productoId });
-    if (!producto) {
+    const productoExistente = await repository.findOne({ _id: productoId });
+    if (!productoExistente) {
         return res.status(404).send({ message: 'Producto no encontrado' });
     }
+    if (await ventaRepository.hasProducto(productoId)) {
+        return res.status(409).send({ message: 'No se puede eliminar el producto porque está asociado a una venta' });
+    }
+    const producto = await repository.delete({ _id: productoId });
+    if (!producto)
+        return res.status(404).send({ message: 'Producto no encontrado' });
     return res.status(200).send({ message: 'Producto eliminado exitosamente' });
 }
 export { sanitizeProductoInput, findAll, findOne, add, update, remove };

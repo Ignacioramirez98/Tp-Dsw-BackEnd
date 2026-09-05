@@ -10,7 +10,7 @@ export function protectRoute(req, res, next) {
         // Verificar el token JWT
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
         req.user = decoded; // Adjuntar la información del usuario al objeto request
-        next(); // Continuar con la siguiente función en la cadena
+        next();
     }
     catch (error) {
         return res.status(401).send({ message: 'Token inválido.' });
