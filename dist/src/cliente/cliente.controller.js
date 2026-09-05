@@ -88,6 +88,7 @@ async function update(req, res) {
     if (!clienteId) {
         return res.status(400).send({ message: 'ID inválido' });
     }
+    const updateData = req.body.sanitizedInput;
     // Actualizar el cliente con los datos sanitizados
     const cliente = await repository.update(clienteId, req.body.sanitizedInput);
     if (!cliente) {
