@@ -12,7 +12,7 @@ import type { Venta } from './venta.entity.js';
 export class ItemVenta {
     [OptionalProps]?: 'subtotal';
 
-    @PrimaryKey()
+    @PrimaryKey({ type: 'ObjectId' })
     _id!: ObjectId;
 
     @ManyToOne('Venta', { fieldName: 'ventaId', hidden: true })
@@ -21,13 +21,13 @@ export class ItemVenta {
     @ManyToOne(() => Producto, { fieldName: 'productoId' })
     producto!: Producto;
 
-    @Property()
+    @Property({ type: 'number' })
     cantidad!: number;
 
-    @Property()
+    @Property({ type: 'number' })
     precioUnitario!: number;
 
-    @Property({ persist: false })
+    @Property({ type: 'number', persist: false })
     get subtotal(): number {
         return this.cantidad * this.precioUnitario;
     }

@@ -7,22 +7,22 @@ import { ItemVenta } from './item-venta.entity.js';
 
 @Entity({ collection: 'ventas' })
 export class Venta {
-    @PrimaryKey()
+    @PrimaryKey({ type: 'ObjectId' })
     _id!: ObjectId;
 
-    @Property()
+    @Property({ type: 'string' })
     estado!: string;
 
-    @Property()
+    @Property({ type: 'Date' })
     fechaContacto!: Date;
 
-    @Property({ nullable: true })
+    @Property({ type: 'Date', nullable: true })
     fechaDeVenta?: Date | null;
 
-    @Property({ nullable: true })
+    @Property({ type: 'Date', nullable: true })
     fechaEntrega?: Date | null;
 
-    @Property({ nullable: true })
+    @Property({ type: 'Date', nullable: true })
     fechaCancelacion?: Date | null;
 
     // Venta N --- 1 Cliente (se mantiene el nombre de campo existente en la base)

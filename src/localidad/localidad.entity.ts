@@ -3,13 +3,13 @@ import { ObjectId } from 'mongodb';
 
 @Entity({ collection: 'localidades' })
 export class Localidad {
-    @PrimaryKey()
+    @PrimaryKey({ type: 'ObjectId' })
     _id!: ObjectId;
 
-    @Property()
+    @Property({ type: 'string' })
     nombre!: string;
 
-    @Property()
+    @Property({ type: 'string' })
     codigo_postal!: string;
 
     constructor(data: Partial<Localidad> = {}) {
