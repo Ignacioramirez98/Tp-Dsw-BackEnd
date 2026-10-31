@@ -1,111 +1,27 @@
-import { Request, Response, NextFunction } from "express";
-import { OperarioRepository } from "../operario/operario.repository.js";
-import { Operario } from "../operario/operario.entity.js";
-import { ServicioRepository } from "../servicio/servicio.repository.js";
-import { ObjectId } from "mongodb";  // Importar ObjectId para la validación
+import { Request, Response } from 'express';
+import { OperarioService } from './operario.service.js';
 
-const repository = new OperarioRepository();
-const servicioRepository = new ServicioRepository();
+const service = new OperarioService();
 
-function sanitizeOperarioInput(req: Request, res: Response, next: NextFunction) {
-    req.body.sanitizedInput = {
-        nombre: req.body.nombre,
-        apellido: req.body.apellido,
-        mail: req.body.mail,
-        dni: req.body.dni,
-        telefono: req.body.telefono
-    };
-
-    Object.keys(req.body.sanitizedInput).forEach((key) => {
-        if (req.body.sanitizedInput[key] === undefined) {
-            delete req.body.sanitizedInput[key];
-        }
-    });
-    next();
+export async function findAll(_req: Request, res: Response) {
+    res.json({ data: await service.findAll() });
 }
 
-// Función para validar y convertir el id en ObjectId
-function validateAndConvertId(id: string): ObjectId | null {
-    if (ObjectId.isValid(id)) {
-        return new ObjectId(id);  // Convertir a ObjectId
-    }
-    return null;  // Retornar null si el id no es válido
+export async function findOne(req: Request, res: Response) {
+    res.json({ data: await service.findOne(req.params.id) });
 }
 
-async function findAll(req: Request, res: Response) {
-    res.json({ data: await repository.findAll() });
+export async function add(req: Request, res: Response) {
+    const data = await service.create(req.body.sanitizedInput);
+    res.status(201).json({ message: 'operario creado', data });
 }
 
-async function findOne(req: Request, res: Response) {
-    const { id } = req.params;
-
-    // Validar y convertir el id
-    const operarioId = validateAndConvertId(id);
-    if (!operarioId) {
-        return res.status(400).send({ message: 'ID inválido' });
-    }
-
-    const operario = await repository.findOne({ _id: operarioId });
-    if (!operario) {
-        return res.status(404).send({ message: 'operario no encontrado' });
-    }
-    res.json({ data: operario });
+export async function update(req: Request, res: Response) {
+    const data = await service.update(req.params.id, req.body.sanitizedInput);
+    res.json({ message: 'operario actualizado exitosamente', data });
 }
 
-async function add(req: Request, res: Response) {
-    const input = req.body.sanitizedInput;
-
-    const operarioInput = new Operario({
-        nombre: input.nombre,
-        apellido: input.apellido,
-        mail: input.mail,
-        dni: input.dni,
-        telefono: input.telefono
-    });
-
-    const operario = await repository.add(operarioInput);
-    return res.status(201).send({ message: 'operario creado', data: operario });
+export async function remove(req: Request, res: Response) {
+    await service.remove(req.params.id);
+    res.json({ message: 'operario eliminado exitosamente' });
 }
-
-async function update(req: Request, res: Response) {
-    const { id } = req.params;
-
-    // Validar y convertir el id
-    const operarioId = validateAndConvertId(id);
-    if (!operarioId) {
-        return res.status(400).send({ message: 'ID inválido' });
-    }
-
-    // Actualizar el operario con los datos sanitizados
-    const operario = await repository.update(operarioId, req.body.sanitizedInput);
-
-    if (!operario) {
-        return res.status(404).send({ message: 'operario no encontrado' });
-    }
-
-    return res.status(200).send({ message: 'operario actualizado exitosamente', data: operario });
-}
-
-async function remove(req: Request, res: Response) {
-    const { id } = req.params;
-
-    // Validar y convertir el id
-    const operarioId = validateAndConvertId(id);
-    if (!operarioId) {
-        return res.status(400).send({ message: 'ID inválido' });
-    }
-
-    if (await servicioRepository.count({ operario: operarioId })) {
-        return res.status(409).send({ message: 'No se puede eliminar el operario porque tiene servicios asignados' });
-    }
-
-    const operario = await repository.delete({ _id: operarioId });
-
-    if (!operario) {
-        return res.status(404).send({ message: 'operario no encontrado' });
-    }
-
-    return res.status(200).send({ message: 'operario eliminado exitosamente' });
-}
-
-export { sanitizeOperarioInput, findAll, findOne, add, update, remove };

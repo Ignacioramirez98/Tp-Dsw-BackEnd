@@ -1,136 +1,39 @@
-import { Request, Response, NextFunction } from "express";
-import { ProductoRepository } from "./producto.repository.js";
-import { Producto } from "./producto.entity.js";
-import { VentaRepository } from "../venta/venta.repository.js";
-import { ObjectId } from "mongodb";  // Importar ObjectId para la validación
-import { toNumber } from "../shared/utils/to-number.js";
+import { Request, Response } from 'express';
+import { ProductoService } from './producto.service.js';
+import { queryString } from '../shared/utils/query.js';
 
-const repository = new ProductoRepository();
-const ventaRepository = new VentaRepository();
+const service = new ProductoService();
 
-function sanitizeProductoInput(req: Request, res: Response, next: NextFunction) {
-    req.body.sanitizedInput = {
-        nombre: req.body.nombre,
-        descripcion: req.body.descripcion,
-        importe_compra: toNumber(req.body.importe_compra),
-        importe_venta: toNumber(req.body.importe_venta),
-        stock: toNumber(req.body.stock),
-    };
+/** Agrega la URL de la imagen subida (si hay) a los datos recibidos. */
+function conImagen(req: Request) {
+    const input = { ...req.body.sanitizedInput };
+    if (req.file) input.imagenUrl = `/uploads/${req.file.filename}`;
+    return input;
+}
 
-    Object.keys(req.body.sanitizedInput).forEach((key) => {
-        if (req.body.sanitizedInput[key] === undefined) {
-            delete req.body.sanitizedInput[key];
-        }
+export async function findAll(req: Request, res: Response) {
+    const data = await service.findAll({
+        nombre: queryString(req, 'nombre'),
+        descripcion: queryString(req, 'descripcion'),
     });
-    next();
+    res.json({ data });
 }
 
-// Función para validar y convertir el id en ObjectId
-function validateAndConvertId(id: string): ObjectId | null {
-    if (ObjectId.isValid(id)) {
-        return new ObjectId(id);  // Convertir a ObjectId
-    }
-    return null;  // Retornar null si el id no es válido
+export async function findOne(req: Request, res: Response) {
+    res.json({ data: await service.findOne(req.params.id) });
 }
 
-async function findAll(req: Request, res: Response) {
-    const filters: Record<string, any> = {};
-    
-    // Filtro por nombre
-    if (req.query.nombre) {
-        filters.nombre = { $regex: req.query.nombre, $options: 'i' };
-    }
-    
-    // Filtro por descripción
-    if (req.query.descripcion) {
-        filters.descripcion = { $regex: req.query.descripcion, $options: 'i' };
-    }
-    
-    res.json({ data: await repository.findAll(Object.keys(filters).length > 0 ? filters : undefined) });
+export async function add(req: Request, res: Response) {
+    const data = await service.create(conImagen(req));
+    res.status(201).json({ message: 'Producto creado', data });
 }
 
-async function findOne(req: Request, res: Response) {
-    const { id } = req.params;
-
-    // Validar y convertir el id
-    const productoId = validateAndConvertId(id);
-    if (!productoId) {
-        return res.status(400).send({ message: 'ID inválido' });
-    }
-
-    const producto = await repository.findOne({ _id: productoId });
-    if (!producto) {
-        return res.status(404).send({ message: 'Producto no encontrado' });
-    }
-    res.json({ data: producto });
+export async function update(req: Request, res: Response) {
+    const data = await service.update(req.params.id, conImagen(req));
+    res.json({ message: 'Producto actualizado exitosamente', data });
 }
 
-async function add(req: Request, res: Response) {
-    const input = req.body.sanitizedInput;
-    const imagenUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
-
-    const productoInput = new Producto({
-        nombre: input.nombre,
-        descripcion: input.descripcion,
-        importe_compra: input.importe_compra,
-        importe_venta: input.importe_venta,
-        stock: input.stock,
-        imagenUrl
-    });
-
-    const producto = await repository.add(productoInput);
-    return res.status(201).send({ message: 'Producto creado', data: producto });
+export async function remove(req: Request, res: Response) {
+    await service.remove(req.params.id);
+    res.json({ message: 'Producto eliminado exitosamente' });
 }
-
-async function update(req: Request, res: Response) {
-    const { id } = req.params;
-
-    // Validar y convertir el id
-    const productoId = validateAndConvertId(id);
-    if (!productoId) {
-        return res.status(400).send({ message: 'ID inválido' });
-    }
-
-    const updateData: any = req.body.sanitizedInput;
-    
-    // Si hay archivo, agregar la URL de la imagen
-    if (req.file) {
-        updateData.imagenUrl = `/uploads/${req.file.filename}`;
-    }
-
-    // Actualizar el producto con los datos sanitizados
-    const producto = await repository.update(productoId, updateData);
-
-    if (!producto) {
-        return res.status(404).send({ message: 'Producto no encontrado' });
-    }
-
-    return res.status(200).send({ message: 'Producto actualizado exitosamente', data: producto });
-}
-
-async function remove(req: Request, res: Response) {
-    const { id } = req.params;
-
-    // Validar y convertir el id
-    const productoId = validateAndConvertId(id);
-    if (!productoId) {
-        return res.status(400).send({ message: 'ID inválido' });
-    }
-
-    const productoExistente = await repository.findOne({ _id: productoId });
-    if (!productoExistente) {
-        return res.status(404).send({ message: 'Producto no encontrado' });
-    }
-
-    if (await ventaRepository.hasProducto(productoId)) {
-        return res.status(409).send({ message: 'No se puede eliminar el producto porque está asociado a una venta' });
-    }
-
-    const producto = await repository.delete({ _id: productoId });
-
-    if (!producto) return res.status(404).send({ message: 'Producto no encontrado' });
-
-    return res.status(200).send({ message: 'Producto eliminado exitosamente' });
-}
-
-export { sanitizeProductoInput, findAll, findOne, add, update, remove };

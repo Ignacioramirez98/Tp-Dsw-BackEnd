@@ -13,6 +13,7 @@ import { ventaRouter } from './venta/venta.routes.js';
 import { operarioRouter } from './operario/operario.routes.js';
 import { initializeORM } from './shared/db/conn.js';
 import { config } from './shared/config.js';
+import { errorHandler, notFoundHandler } from './middleware/error.middleware.js';
 
 const app = express();
 
@@ -46,9 +47,9 @@ async function startServer() {
     app.use('/ventas', ventaRouter);
     app.use('/operarios', operarioRouter);
 
-    app.use((_, res) => {
-      return res.status(404).send({ message: 'Resource not found' });
-    });
+    // Rutas inexistentes y manejo centralizado de errores (siempre al final)
+    app.use(notFoundHandler);
+    app.use(errorHandler);
 
     app.listen(config.port, () => {
       console.log(`Server running on http://localhost:${config.port}/`);

@@ -1,12 +1,16 @@
 import { Router } from 'express';
-import { sanitizeOperarioInput, findAll, findOne, add, update, remove } from './operario.controller.js';
+import { findAll, findOne, add, update, remove } from './operario.controller.js';
 import { protectRoute, requireRole } from '../middleware/roleAuth.middleware.js';
+import { sanitizeInput } from '../middleware/sanitize.middleware.js';
+import { asyncHandler } from '../middleware/async-handler.js';
 
-export const operarioRouter = Router()
+export const operarioRouter = Router();
 
-operarioRouter.get('/', protectRoute, requireRole('operario', 'admin'), findAll);
-operarioRouter.get('/:id', protectRoute, requireRole('operario', 'admin'), findOne);
-operarioRouter.post('/', protectRoute, requireRole('admin'), sanitizeOperarioInput, add);
-operarioRouter.put('/:id', protectRoute, requireRole('operario', 'admin'), sanitizeOperarioInput, update);
-operarioRouter.patch('/:id', protectRoute, requireRole('operario', 'admin'), sanitizeOperarioInput, update);
-operarioRouter.delete('/:id', protectRoute, requireRole('admin'), remove);
+const sanitize = sanitizeInput(['nombre', 'apellido', 'mail', 'dni', 'telefono']);
+
+operarioRouter.get('/', protectRoute, requireRole('operario', 'admin'), asyncHandler(findAll));
+operarioRouter.get('/:id', protectRoute, requireRole('operario', 'admin'), asyncHandler(findOne));
+operarioRouter.post('/', protectRoute, requireRole('admin'), sanitize, asyncHandler(add));
+operarioRouter.put('/:id', protectRoute, requireRole('operario', 'admin'), sanitize, asyncHandler(update));
+operarioRouter.patch('/:id', protectRoute, requireRole('operario', 'admin'), sanitize, asyncHandler(update));
+operarioRouter.delete('/:id', protectRoute, requireRole('admin'), asyncHandler(remove));
