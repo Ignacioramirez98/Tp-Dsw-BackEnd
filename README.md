@@ -33,18 +33,22 @@ Esto descargará todas las librerías necesarias (Express, MongoDB, JWT, etc.)
 
 #### 3 Configurar variables de entorno
 
-El archivo `.env` ya está configurado. Verificar que contiene:
+Copiar el archivo de ejemplo y completar los valores:
 
-```env
-MONGO_URI=mongodb+srv://nacho98nacho98:dsw123@cluster0.z5xdoug.mongodb.net/crm
-NODE_ENV=development
-JWT_SECRET=your_secure_jwt_secret_key_change_in_production
-JWT_EXPIRES_IN=1h
-PORT=3000
-FRONTEND_URL=http://localhost:4200
+```bash
+cp .env.example .env
 ```
 
-**IMPORTANTE para Producción:** Cambiar `JWT_SECRET` a un valor seguro.
+| Variable | Descripción |
+| --- | --- |
+| `MONGO_URI` | Connection string de MongoDB Atlas (pedirla al equipo, **nunca** commitearla) |
+| `NODE_ENV` | `development`, `production` o `test` |
+| `PORT` | Puerto del servidor (por defecto `3000`) |
+| `JWT_SECRET` | **Obligatorio.** Clave para firmar los tokens. Generar una con `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
+| `JWT_EXPIRES_IN` | Duración del token (ej. `1h`) |
+| `FRONTEND_URL` | URL del frontend habilitada en CORS (ej. `http://localhost:4200`) |
+
+El servidor no arranca si falta `MONGO_URI` o `JWT_SECRET`.
 
 ---
 
@@ -251,7 +255,7 @@ Si hay errores, verificar output del test
 
 ## Integrantes
 
-- Constanza Dominio
 - Milton Sarkissian
+- Constanza Dominio
 
 ---

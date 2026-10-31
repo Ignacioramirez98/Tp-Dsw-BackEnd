@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
 import { loginSchema, crearUsuarioSchema } from '../validators/usuario.validator.js';
 import { ZodError } from 'zod';
+import { config } from '../shared/config.js';
 
 const repository = new UsuarioRepository();
 
@@ -43,8 +44,8 @@ async function login(req: Request, res: Response) {
                 rol: usuario.rol,
                 usuarioId: usuario._id
             },
-            process.env.JWT_SECRET || 'secret_key',
-            { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
+            config.jwtSecret,
+            { expiresIn: config.jwtExpiresIn as jwt.SignOptions['expiresIn'] }
         );
 
         // Retornar token y datos del usuario

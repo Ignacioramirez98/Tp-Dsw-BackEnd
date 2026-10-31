@@ -11,11 +11,12 @@ import { servicioRouter } from './servicio/servicio.routes.js';
 import { ventaRouter } from './venta/venta.routes.js';
 import { operarioRouter } from './operario/operario.routes.js';
 import { initializeORM } from './shared/db/conn.js';
+import { config } from './shared/config.js';
 
 const app = express();
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:4200',
+  origin: config.frontendUrl,
   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
 }));
 
@@ -45,9 +46,9 @@ async function startServer() {
       return res.status(404).send({ message: 'Resource not found' });
     });
 
-    app.listen(3000, () => {
-      console.log('Server running on http://localhost:3000/');
-      console.log('Environment:', process.env.NODE_ENV);
+    app.listen(config.port, () => {
+      console.log(`Server running on http://localhost:${config.port}/`);
+      console.log('Environment:', config.nodeEnv);
     });
 
   } catch (error) {
