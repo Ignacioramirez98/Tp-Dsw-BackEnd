@@ -1,10 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { LocalidadRepository } from "../localidad/localidad.repository.js";
 import { Localidad } from "../localidad/localidad.entity.js";
+import { ClienteRepository } from "../cliente/cliente.repository.js";
 
 import { ObjectId } from "mongodb";  // Importar ObjectId para la validación
 
 const repository = new LocalidadRepository();
+const clienteRepository = new ClienteRepository();
 
 function sanitizeLocalidadInput(req: Request, res: Response, next: NextFunction) {
     req.body.sanitizedInput = {
@@ -86,6 +88,10 @@ async function remove(req: Request, res: Response) {
     const localidadId = validateAndConvertId(id);
     if (!localidadId) {
         return res.status(400).send({ message: 'ID inválido' });
+    }
+
+    if (await clienteRepository.count({ localidad: localidadId })) {
+        return res.status(409).send({ message: 'No se puede eliminar la localidad porque tiene clientes asociados' });
     }
 
     const localidad = await repository.delete({ _id: localidadId });

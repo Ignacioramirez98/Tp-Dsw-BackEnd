@@ -1,5 +1,10 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import { Entity, OneToOne, PrimaryKey, Property } from '@mikro-orm/core';
 import { ObjectId } from 'mongodb';
+import { Cliente } from '../cliente/cliente.entity.js';
+import { Vendedor } from '../Vendedor/vendedor.entity.js';
+import { Operario } from '../operario/operario.entity.js';
+
+export type Rol = 'cliente' | 'vendedor' | 'operario' | 'admin';
 
 @Entity({ collection: 'usuarios' })
 export class Usuario {
@@ -9,31 +14,28 @@ export class Usuario {
     @Property({ unique: true })
     usuario!: string;
 
-    @Property()
-    contraseña!: string; // bcrypt hash
+    @Property({ hidden: true })
+    contraseña!: string; // bcrypt hash, nunca se serializa
 
     @Property()
-    rol!: 'cliente' | 'vendedor' | 'operario' | 'admin';
+    rol!: Rol;
 
     @Property()
     activo: boolean = true;
 
-    @Property({ nullable: true })
-    clienteId?: ObjectId; // Referencia a Cliente
+    // Cada usuario se vincula (según su rol) con su perfil de negocio
+    @OneToOne(() => Cliente, { owner: true, nullable: true, fieldName: 'clienteId' })
+    cliente?: Cliente | null;
 
-    @Property({ nullable: true })
-    vendedorId?: ObjectId; // Referencia a Vendedor
+    @OneToOne(() => Vendedor, { owner: true, nullable: true, fieldName: 'vendedorId' })
+    vendedor?: Vendedor | null;
 
-    @Property({ nullable: true })
-    operarioId?: ObjectId; // Referencia a Operario
+    @OneToOne(() => Operario, { owner: true, nullable: true, fieldName: 'operarioId' })
+    operario?: Operario | null;
 
     @Property()
     createdAt: Date = new Date();
 
     @Property({ onUpdate: () => new Date() })
     updatedAt: Date = new Date();
-
-    constructor(data: Partial<Usuario> = {}) {
-        Object.assign(this, data);
-    }
 }

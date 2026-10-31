@@ -1,10 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { VendedorRepository } from "../Vendedor/vendedor.repository.js";
 import { Vendedor } from "../Vendedor/vendedor.entity.js";
+import { VentaRepository } from "../venta/venta.repository.js";
 import { ObjectId } from "mongodb";  // Importar ObjectId para la validación
 import bcrypt from "bcryptjs";
 
 const repository = new VendedorRepository();
+const ventaRepository = new VentaRepository();
 
 function sanitizeVendedorInput(req: Request, res: Response, next: NextFunction) {
     req.body.sanitizedInput = {
@@ -96,6 +98,10 @@ async function remove(req: Request, res: Response) {
     const vendedorId = validateAndConvertId(id);
     if (!vendedorId) {
         return res.status(400).send({ message: 'ID inválido' });
+    }
+
+    if (await ventaRepository.hasVendedor(vendedorId)) {
+        return res.status(409).send({ message: 'No se puede eliminar el vendedor porque tiene ventas asociadas' });
     }
 
     const vendedor = await repository.delete({ _id: vendedorId });

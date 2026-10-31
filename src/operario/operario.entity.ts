@@ -22,9 +22,9 @@ export class Operario {
     telefono!: string;
 
     @Property()
-    rol!: string;
+    rol: string = 'operario';
 
     constructor(data: Partial<Operario> = {}) {
         Object.assign(this, data);
     }
-}
+}

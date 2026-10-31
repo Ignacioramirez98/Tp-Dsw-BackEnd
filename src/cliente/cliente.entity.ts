@@ -1,5 +1,6 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import { Entity, ManyToOne, PrimaryKey, Property } from '@mikro-orm/core';
 import { ObjectId } from 'mongodb';
+import { Localidad } from '../localidad/localidad.entity.js';
 
 @Entity({ collection: 'clientes' })
 export class Cliente {
@@ -27,10 +28,10 @@ export class Cliente {
     @Property()
     razon_social!: string;
 
+    // Cliente N --- 1 Localidad (nullable para no romper clientes cargados antes)
+    @ManyToOne(() => Localidad, { nullable: true, fieldName: 'localidadId' })
+    localidad?: Localidad | null;
+
     @Property({ nullable: true })
     imagenUrl?: string;
-
-    constructor(data: Partial<Cliente> = {}) {
-        Object.assign(this, data);
-    }
 }

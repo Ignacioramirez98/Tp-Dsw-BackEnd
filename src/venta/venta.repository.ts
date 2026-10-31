@@ -1,56 +1,65 @@
-import { Repository } from "../shared/repository.js";
-import { Venta } from "./venta.entity.js";
-import { getORM } from '../shared/db/conn.js';
-import { ObjectId } from "mongodb";
+import { ObjectId } from 'mongodb';
+import { BaseRepository } from '../shared/base.repository.js';
+import { ItemVenta } from './item-venta.entity.js';
+import { Venta } from './venta.entity.js';
 
-export class VentaRepository implements Repository<Venta> {
-    getRepo() {
-        return getORM().em.getRepository(Venta);
-    }
+export interface ItemVentaInput {
+    producto: ObjectId;
+    cantidad: number;
+    precioUnitario: number;
+}
 
-    public async findAll(filters?: Record<string, any>): Promise<Venta[] | undefined> {
-        const query = filters || {};
-        return await this.getRepo().find(query);
-    }
+export class VentaRepository extends BaseRepository<Venta> {
+    protected readonly entity = Venta;
+    protected readonly populate = ['cliente', 'cliente.localidad', 'vendedor', 'items', 'items.producto', 'servicios'];
 
-    public async findOne(item: { _id: ObjectId }): Promise<Venta | undefined> {
-        const result = await this.getRepo().findOne({ _id: item._id });
-        return result ?? undefined;
-    }
-
-    public async hasProducto(productoId: ObjectId): Promise<boolean> {
-        const venta = await this.getRepo().findOne({ productoIds: productoId } as any);
-        return venta !== null;
-    }
-
-    public async hasServicio(servicioId: ObjectId): Promise<boolean> {
-        const venta = await this.getRepo().findOne({ servicioIds: servicioId } as any);
-        return venta !== null;
-    }
-
-    public async add(item: Venta): Promise<Venta | undefined> {
-        const em = getORM().em.fork();
-        const venta = em.create(Venta, item);
-        await em.flush();
+    /** Crea la venta junto con sus ítems en un solo flush. */
+    public async addConItems(data: any, items: ItemVentaInput[]): Promise<Venta> {
+        const venta = this.em.create(Venta, data);
+        for (const item of items) {
+            venta.items.add(this.em.create(ItemVenta, { ...item, venta }));
+        }
+        await this.em.flush();
         return venta;
     }
 
-    public async update(id: ObjectId, item: Venta): Promise<Venta | undefined> {
-        const em = getORM().em.fork();
-        const venta = await em.getRepository(Venta).findOne({ _id: id });
+    /** Actualiza la venta y, si se envían ítems, reemplaza los anteriores. */
+    public async updateConItems(id: ObjectId, data: any, items?: ItemVentaInput[]): Promise<Venta | undefined> {
+        const venta = await this.em.findOne(Venta, { _id: id }, { populate: ['items'] });
         if (!venta) return undefined;
 
-        Object.assign(venta, item);
-        await em.flush();
+        this.em.assign(venta, data);
+        if (items) {
+            venta.items.removeAll(); // orphanRemoval borra los ítems viejos
+            for (const item of items) {
+                venta.items.add(this.em.create(ItemVenta, { ...item, venta }));
+            }
+        }
+        await this.em.flush();
         return venta;
     }
 
     public async delete(item: { _id: ObjectId }): Promise<Venta | undefined> {
-        const em = getORM().em.fork();
-        const venta = await em.getRepository(Venta).findOne({ _id: item._id });
+        const venta = await this.em.findOne(Venta, { _id: item._id }, { populate: ['items'] });
         if (!venta) return undefined;
 
-        await em.remove(venta).flush();
+        await this.em.remove(venta).flush(); // cascade borra también los ítems
         return venta;
+    }
+
+    public async hasProducto(productoId: ObjectId): Promise<boolean> {
+        return (await this.em.count(ItemVenta, { producto: productoId })) > 0;
+    }
+
+    public async hasServicio(servicioId: ObjectId): Promise<boolean> {
+        return (await this.em.count(Venta, { servicios: servicioId })) > 0;
+    }
+
+    public async hasCliente(clienteId: ObjectId): Promise<boolean> {
+        return (await this.em.count(Venta, { cliente: clienteId })) > 0;
+    }
+
+    public async hasVendedor(vendedorId: ObjectId): Promise<boolean> {
+        return (await this.em.count(Venta, { vendedor: vendedorId })) > 0;
     }
 }

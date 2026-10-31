@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { UsuarioRepository } from './usuario.repository.js';
-import { Usuario } from './usuario.entity.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
@@ -18,7 +17,7 @@ async function login(req: Request, res: Response) {
         const validated = loginSchema.parse(req.body);
 
         // Buscar usuario por nombre de usuario
-        const usuario = await repository.findOne({ usuario: validated.usuario });
+        const usuario = await repository.findByUsuario(validated.usuario);
 
         if (!usuario) {
             return res.status(401).json({ message: 'Usuario o contraseña inválidos' });
@@ -56,9 +55,9 @@ async function login(req: Request, res: Response) {
                 usuarioId: usuario._id,
                 usuario: usuario.usuario,
                 rol: usuario.rol,
-                clienteId: usuario.clienteId || null,
-                vendedorId: usuario.vendedorId || null,
-                operarioId: usuario.operarioId || null
+                clienteId: usuario.cliente?._id ?? null,
+                vendedorId: usuario.vendedor?._id ?? null,
+                operarioId: usuario.operario?._id ?? null
             }
         });
     } catch (error) {
@@ -80,7 +79,7 @@ async function crearUsuario(req: Request, res: Response) {
         const validated = crearUsuarioSchema.parse(req.body);
 
         // Verificar que el usuario no exista
-        const usuarioExistente = await repository.findOne({ usuario: validated.usuario });
+        const usuarioExistente = await repository.findByUsuario(validated.usuario);
 
         if (usuarioExistente) {
             return res.status(409).json({ message: 'El usuario ya existe' });
@@ -94,17 +93,15 @@ async function crearUsuario(req: Request, res: Response) {
         const vendedorId = validated.vendedorId ? new ObjectId(validated.vendedorId) : undefined;
         const operarioId = validated.operarioId ? new ObjectId(validated.operarioId) : undefined;
 
-        const nuevoUsuario = new Usuario({
+        const usuarioCreado = await repository.add({
             usuario: validated.usuario,
             contraseña: contraseñaHash,
             rol: validated.rol,
-            clienteId,
-            vendedorId,
-            operarioId,
+            cliente: clienteId ?? null,
+            vendedor: vendedorId ?? null,
+            operario: operarioId ?? null,
             activo: true
         });
-
-        const usuarioCreado = await repository.add(nuevoUsuario);
 
         if (!usuarioCreado) {
             return res.status(500).json({ message: 'Error al crear el usuario' });
@@ -149,9 +146,9 @@ async function obtenerTodos(req: Request, res: Response) {
             usuario: u.usuario,
             rol: u.rol,
             activo: u.activo,
-            clienteId: u.clienteId || null,
-            vendedorId: u.vendedorId || null,
-            operarioId: u.operarioId || null,
+            clienteId: u.cliente?._id ?? null,
+            vendedorId: u.vendedor?._id ?? null,
+            operarioId: u.operario?._id ?? null,
             createdAt: u.createdAt
         }));
 
@@ -184,9 +181,9 @@ async function obtenerPorId(req: Request, res: Response) {
                 usuario: usuario.usuario,
                 rol: usuario.rol,
                 activo: usuario.activo,
-                clienteId: usuario.clienteId || null,
-                vendedorId: usuario.vendedorId || null,
-                operarioId: usuario.operarioId || null
+                clienteId: usuario.cliente?._id ?? null,
+                vendedorId: usuario.vendedor?._id ?? null,
+                operarioId: usuario.operario?._id ?? null
             }
         });
     } catch (error) {

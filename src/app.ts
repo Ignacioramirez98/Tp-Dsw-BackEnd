@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import { RequestContext } from '@mikro-orm/core';
 import { usuarioRouter } from './usuario/usuario.routes.js';
 import { productoRouter } from './producto/producto.routes.js';
 import { vendedorRouter } from './Vendedor/vendedor.routes.js';
@@ -27,8 +28,11 @@ app.use(express.static('public'));
 
 async function startServer() {
   try {
-    await initializeORM();
+    const orm = await initializeORM();
     console.log('Connected to MongoDB with MikroORM');
+
+    // Un EntityManager por request (identity map aislado)
+    app.use((req, res, next) => RequestContext.create(orm.em, next));
 
     // Rutas de autenticación
     app.use('/usuarios', usuarioRouter);

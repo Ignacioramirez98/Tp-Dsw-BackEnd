@@ -1,5 +1,6 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import { Entity, ManyToOne, PrimaryKey, Property } from '@mikro-orm/core';
 import { ObjectId } from 'mongodb';
+import { Operario } from '../operario/operario.entity.js';
 
 @Entity({ collection: 'servicios' })
 export class Servicio {
@@ -12,10 +13,10 @@ export class Servicio {
     @Property()
     importe_por_hora!: number;
 
+    // Servicio N --- 1 Operario responsable
+    @ManyToOne(() => Operario, { nullable: true, fieldName: 'operarioId' })
+    operario?: Operario | null;
+
     @Property({ nullable: true })
     imagenUrl?: string;
-
-    constructor(data: Partial<Servicio> = {}) {
-        Object.assign(this, data);
-    }
 }

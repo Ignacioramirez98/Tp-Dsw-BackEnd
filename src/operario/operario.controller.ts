@@ -1,9 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import { OperarioRepository } from "../operario/operario.repository.js";
 import { Operario } from "../operario/operario.entity.js";
+import { ServicioRepository } from "../servicio/servicio.repository.js";
 import { ObjectId } from "mongodb";  // Importar ObjectId para la validación
 
 const repository = new OperarioRepository();
+const servicioRepository = new ServicioRepository();
 
 function sanitizeOperarioInput(req: Request, res: Response, next: NextFunction) {
     req.body.sanitizedInput = {
@@ -91,6 +93,10 @@ async function remove(req: Request, res: Response) {
     const operarioId = validateAndConvertId(id);
     if (!operarioId) {
         return res.status(400).send({ message: 'ID inválido' });
+    }
+
+    if (await servicioRepository.count({ operario: operarioId })) {
+        return res.status(409).send({ message: 'No se puede eliminar el operario porque tiene servicios asignados' });
     }
 
     const operario = await repository.delete({ _id: operarioId });

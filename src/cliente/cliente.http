@@ -16,7 +16,8 @@ Content-Type: application/json
           "mail":"ig@com.ar",
           "telefono":"111111111",
           "direccion":"calle falsa 123",
-          "razon_social":"Mesa 12"
+          "razon_social":"Mesa 12",
+          "localidadId":"66983e1c8a0b2c3d4e5f6a00"
 }
 
 ### Modificar un cliente (completo)
@@ -49,4 +50,4 @@ Content-Type: application/json
 
 
 ### Borrar un cliente
-DELETE http://localhost:3000/clientes/67344f5e59445f2f96ef54b4
+DELETE http://localhost:3000/clientes/67344f5e59445f2f96ef54b4
