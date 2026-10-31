@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { config } from '../shared/config.js';
 
 export interface AuthRequest extends Request {
   user?: { id: string; usuario: string; rol: string };
@@ -13,7 +14,7 @@ export function protectRoute(req: AuthRequest, res: Response, next: NextFunction
     }
 
     try {
-        const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded: any = jwt.verify(token, config.jwtSecret);
         req.user = decoded;
         next();
     } catch (error) {
