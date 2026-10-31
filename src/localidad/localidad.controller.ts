@@ -1,106 +1,27 @@
-import { Request, Response, NextFunction } from "express";
-import { LocalidadRepository } from "../localidad/localidad.repository.js";
-import { Localidad } from "../localidad/localidad.entity.js";
-import { ClienteRepository } from "../cliente/cliente.repository.js";
+import { Request, Response } from 'express';
+import { LocalidadService } from './localidad.service.js';
 
-import { ObjectId } from "mongodb";  // Importar ObjectId para la validación
+const service = new LocalidadService();
 
-const repository = new LocalidadRepository();
-const clienteRepository = new ClienteRepository();
-
-function sanitizeLocalidadInput(req: Request, res: Response, next: NextFunction) {
-    req.body.sanitizedInput = {
-        nombre: req.body.nombre,
-        codigo_postal: req.body.codigo_postal,
-    };
-
-    Object.keys(req.body.sanitizedInput).forEach((key) => {
-        if (req.body.sanitizedInput[key] === undefined) {
-            delete req.body.sanitizedInput[key];
-        }
-    });
-    next();
+export async function findAll(_req: Request, res: Response) {
+    res.json({ data: await service.findAll() });
 }
 
-// Función para validar y convertir el id en ObjectId
-function validateAndConvertId(id: string): ObjectId | null {
-    if (ObjectId.isValid(id)) {
-        return new ObjectId(id);  // Convertir a ObjectId
-    }
-    return null;  // Retornar null si el id no es válido
+export async function findOne(req: Request, res: Response) {
+    res.json({ data: await service.findOne(req.params.id) });
 }
 
-async function findAll(req: Request, res: Response) {
-    res.json({ data: await repository.findAll() });
+export async function add(req: Request, res: Response) {
+    const data = await service.create(req.body.sanitizedInput);
+    res.status(201).json({ message: 'localidad creada', data });
 }
 
-async function findOne(req: Request, res: Response) {
-    const { id } = req.params;
-
-    // Validar y convertir el id
-    const localidadId = validateAndConvertId(id);
-    if (!localidadId) {
-        return res.status(400).send({ message: 'ID inválido' });
-    }
-
-    const localidad = await repository.findOne({ _id: localidadId });
-    if (!localidad) {
-        return res.status(404).send({ message: 'localidad no encontrado' });
-    }
-    res.json({ data: localidad });
+export async function update(req: Request, res: Response) {
+    const data = await service.update(req.params.id, req.body.sanitizedInput);
+    res.json({ message: 'localidad actualizada exitosamente', data });
 }
 
-async function add(req: Request, res: Response) {
-    const input = req.body.sanitizedInput;
-
-    const localidadInput = new Localidad({
-        nombre: input.nombre,
-        codigo_postal: input.codigo_postal
-    });
-
-    const localidad = await repository.add(localidadInput);
-    return res.status(201).send({ message: 'localidad creado', data: localidad });
+export async function remove(req: Request, res: Response) {
+    await service.remove(req.params.id);
+    res.json({ message: 'localidad eliminada exitosamente' });
 }
-
-async function update(req: Request, res: Response) {
-    const { id } = req.params;
-
-    // Validar y convertir el id
-    const localidadId = validateAndConvertId(id);
-    if (!localidadId) {
-        return res.status(400).send({ message: 'ID inválido' });
-    }
-
-    // Actualizar el localidad con los datos sanitizados
-    const localidad = await repository.update(localidadId, req.body.sanitizedInput);
-
-    if (!localidad) {
-        return res.status(404).send({ message: 'localidad no encontrado' });
-    }
-
-    return res.status(200).send({ message: 'localidad actualizado exitosamente', data: localidad });
-}
-
-async function remove(req: Request, res: Response) {
-    const { id } = req.params;
-
-    // Validar y convertir el id
-    const localidadId = validateAndConvertId(id);
-    if (!localidadId) {
-        return res.status(400).send({ message: 'ID inválido' });
-    }
-
-    if (await clienteRepository.count({ localidad: localidadId })) {
-        return res.status(409).send({ message: 'No se puede eliminar la localidad porque tiene clientes asociados' });
-    }
-
-    const localidad = await repository.delete({ _id: localidadId });
-
-    if (!localidad) {
-        return res.status(404).send({ message: 'localidad no encontrado' });
-    }
-
-    return res.status(200).send({ message: 'localidad eliminado exitosamente' });
-}
-
-export { sanitizeLocalidadInput, findAll, findOne, add, update, remove };

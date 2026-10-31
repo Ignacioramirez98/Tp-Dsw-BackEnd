@@ -1,12 +1,16 @@
 import { Router } from 'express';
-import { sanitizeVendedorInput, findAll, findOne, add, update, remove } from './vendedor.controller.js';
+import { findAll, findOne, add, update, remove } from './vendedor.controller.js';
 import { protectRoute, requireRole } from '../middleware/roleAuth.middleware.js';
+import { sanitizeInput } from '../middleware/sanitize.middleware.js';
+import { asyncHandler } from '../middleware/async-handler.js';
 
-export const vendedorRouter = Router()
+export const vendedorRouter = Router();
 
-vendedorRouter.get('/', protectRoute, requireRole('vendedor', 'admin'), findAll);
-vendedorRouter.get('/:id', protectRoute, requireRole('vendedor', 'admin'), findOne);
-vendedorRouter.post('/', protectRoute, requireRole('admin'), sanitizeVendedorInput, add);
-vendedorRouter.put('/:id', protectRoute, requireRole('vendedor', 'admin'), sanitizeVendedorInput, update);
-vendedorRouter.patch('/:id', protectRoute, requireRole('vendedor', 'admin'), sanitizeVendedorInput, update);
-vendedorRouter.delete('/:id', protectRoute, requireRole('admin'), remove);
+const sanitize = sanitizeInput(['nombre', 'apellido', 'mail', 'dni', 'telefono', 'rol']);
+
+vendedorRouter.get('/', protectRoute, requireRole('vendedor', 'admin'), asyncHandler(findAll));
+vendedorRouter.get('/:id', protectRoute, requireRole('vendedor', 'admin'), asyncHandler(findOne));
+vendedorRouter.post('/', protectRoute, requireRole('admin'), sanitize, asyncHandler(add));
+vendedorRouter.put('/:id', protectRoute, requireRole('vendedor', 'admin'), sanitize, asyncHandler(update));
+vendedorRouter.patch('/:id', protectRoute, requireRole('vendedor', 'admin'), sanitize, asyncHandler(update));
+vendedorRouter.delete('/:id', protectRoute, requireRole('admin'), asyncHandler(remove));

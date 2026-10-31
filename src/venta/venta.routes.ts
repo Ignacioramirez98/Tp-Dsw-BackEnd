@@ -1,12 +1,19 @@
 import { Router } from 'express';
-import { sanitizeVentaInput, findAll, findOne, add, update, remove } from './venta.controller.js';
+import { findAll, findOne, add, update, remove } from './venta.controller.js';
 import { protectRoute, requireRole } from '../middleware/roleAuth.middleware.js';
+import { sanitizeInput } from '../middleware/sanitize.middleware.js';
+import { asyncHandler } from '../middleware/async-handler.js';
 
-export const ventaRouter = Router()
+export const ventaRouter = Router();
 
-ventaRouter.get('/', protectRoute, requireRole('vendedor', 'admin'), findAll);
-ventaRouter.get('/:id', protectRoute, requireRole('vendedor', 'admin'), findOne);
-ventaRouter.post('/', protectRoute, requireRole('vendedor', 'admin'), sanitizeVentaInput, add);
-ventaRouter.put('/:id', protectRoute, requireRole('vendedor', 'admin'), sanitizeVentaInput, update);
-ventaRouter.patch('/:id', protectRoute, requireRole('vendedor', 'admin'), sanitizeVentaInput, update);
-ventaRouter.delete('/:id', protectRoute, requireRole('admin'), remove);
+const sanitize = sanitizeInput([
+    'estado', 'fechaContacto', 'fechaDeVenta', 'fechaEntrega', 'fechaCancelacion',
+    'clienteId', 'vendedorId', 'items', 'productoIds', 'servicioIds',
+]);
+
+ventaRouter.get('/', protectRoute, requireRole('vendedor', 'admin'), asyncHandler(findAll));
+ventaRouter.get('/:id', protectRoute, requireRole('vendedor', 'admin'), asyncHandler(findOne));
+ventaRouter.post('/', protectRoute, requireRole('vendedor', 'admin'), sanitize, asyncHandler(add));
+ventaRouter.put('/:id', protectRoute, requireRole('vendedor', 'admin'), sanitize, asyncHandler(update));
+ventaRouter.patch('/:id', protectRoute, requireRole('vendedor', 'admin'), sanitize, asyncHandler(update));
+ventaRouter.delete('/:id', protectRoute, requireRole('admin'), asyncHandler(remove));

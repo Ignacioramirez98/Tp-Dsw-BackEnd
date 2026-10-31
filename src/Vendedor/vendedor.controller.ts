@@ -1,116 +1,27 @@
-import { Request, Response, NextFunction } from "express";
-import { VendedorRepository } from "../Vendedor/vendedor.repository.js";
-import { Vendedor } from "../Vendedor/vendedor.entity.js";
-import { VentaRepository } from "../venta/venta.repository.js";
-import { ObjectId } from "mongodb";  // Importar ObjectId para la validación
-import bcrypt from "bcryptjs";
+import { Request, Response } from 'express';
+import { VendedorService } from './vendedor.service.js';
 
-const repository = new VendedorRepository();
-const ventaRepository = new VentaRepository();
+const service = new VendedorService();
 
-function sanitizeVendedorInput(req: Request, res: Response, next: NextFunction) {
-    req.body.sanitizedInput = {
-        nombre: req.body.nombre,
-        apellido: req.body.apellido,
-        mail: req.body.mail,
-        dni: req.body.dni,
-        telefono: req.body.telefono,
-        rol: req.body.rol,
-        usuario: req.body.usuario,
-        contraseña: req.body.contraseña,
-    };
-
-    Object.keys(req.body.sanitizedInput).forEach((key) => {
-        if (req.body.sanitizedInput[key] === undefined) {
-            delete req.body.sanitizedInput[key];
-        }
-    });
-    next();
+export async function findAll(_req: Request, res: Response) {
+    res.json({ data: await service.findAll() });
 }
 
-// Función para validar y convertir el id en ObjectId
-function validateAndConvertId(id: string): ObjectId | null {
-    if (ObjectId.isValid(id)) {
-        return new ObjectId(id);  // Convertir a ObjectId
-    }
-    return null;  // Retornar null si el id no es válido
+export async function findOne(req: Request, res: Response) {
+    res.json({ data: await service.findOne(req.params.id) });
 }
 
-async function findAll(req: Request, res: Response) {
-    res.json({ data: await repository.findAll() });
+export async function add(req: Request, res: Response) {
+    const data = await service.create(req.body.sanitizedInput);
+    res.status(201).json({ message: 'vendedor creado', data });
 }
 
-async function findOne(req: Request, res: Response) {
-    const { id } = req.params;
-
-    // Validar y convertir el id
-    const vendedorId = validateAndConvertId(id);
-    if (!vendedorId) {
-        return res.status(400).send({ message: 'ID inválido' });
-    }
-
-    const vendedor = await repository.findOne({ _id: vendedorId });
-    if (!vendedor) {
-        return res.status(404).send({ message: 'vendedor no encontrado' });
-    }
-    res.json({ data: vendedor });
+export async function update(req: Request, res: Response) {
+    const data = await service.update(req.params.id, req.body.sanitizedInput);
+    res.json({ message: 'vendedor actualizado exitosamente', data });
 }
 
-async function add(req: Request, res: Response) {
-    const input = req.body.sanitizedInput;
-
-    const vendedorInput = new Vendedor({
-        nombre: input.nombre,
-        apellido: input.apellido,
-        mail: input.mail,
-        dni: input.dni,
-        telefono: input.telefono,
-        rol: input.rol
-    });
-
-    const vendedor = await repository.add(vendedorInput);
-    return res.status(201).send({ message: 'vendedor creado', data: vendedor });
+export async function remove(req: Request, res: Response) {
+    await service.remove(req.params.id);
+    res.json({ message: 'vendedor eliminado exitosamente' });
 }
-
-async function update(req: Request, res: Response) {
-    const { id } = req.params;
-
-    // Validar y convertir el id
-    const vendedorId = validateAndConvertId(id);
-    if (!vendedorId) {
-        return res.status(400).send({ message: 'ID inválido' });
-    }
-
-    // Actualizar el vendedor con los datos sanitizados
-    const vendedor = await repository.update(vendedorId, req.body.sanitizedInput);
-
-    if (!vendedor) {
-        return res.status(404).send({ message: 'vendedor no encontrado' });
-    }
-
-    return res.status(200).send({ message: 'vendedor actualizado exitosamente', data: vendedor });
-}
-
-async function remove(req: Request, res: Response) {
-    const { id } = req.params;
-
-    // Validar y convertir el id
-    const vendedorId = validateAndConvertId(id);
-    if (!vendedorId) {
-        return res.status(400).send({ message: 'ID inválido' });
-    }
-
-    if (await ventaRepository.hasVendedor(vendedorId)) {
-        return res.status(409).send({ message: 'No se puede eliminar el vendedor porque tiene ventas asociadas' });
-    }
-
-    const vendedor = await repository.delete({ _id: vendedorId });
-
-    if (!vendedor) {
-        return res.status(404).send({ message: 'vendedor no encontrado' });
-    }
-
-    return res.status(200).send({ message: 'vendedor eliminado exitosamente' });
-}
-
-export { sanitizeVendedorInput, findAll, findOne, add, update, remove };
