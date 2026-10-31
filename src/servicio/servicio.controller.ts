@@ -1,16 +1,20 @@
 import { Request, Response, NextFunction } from "express";
 import { ServicioRepository } from "../servicio/servicio.repository.js";
-import { Servicio } from "../servicio/servicio.entity.js";
 import { VentaRepository } from "../venta/venta.repository.js";
+import { OperarioRepository } from "../operario/operario.repository.js";
+import { toObjectId } from "../shared/utils/object-id.js";
+import { toNumber } from "../shared/utils/to-number.js";
 import { ObjectId } from "mongodb";  // Importar ObjectId para la validación
 
 const repository = new ServicioRepository();
 const ventaRepository = new VentaRepository();
+const operarioRepository = new OperarioRepository();
 
 function sanitizeServicioInput(req: Request, res: Response, next: NextFunction) {
     req.body.sanitizedInput = {
         descripcion: req.body.descripcion,
-        importe_por_hora: req.body.importe_por_hora,
+        importe_por_hora: toNumber(req.body.importe_por_hora),
+        operarioId: req.body.operarioId,
     };
 
     Object.keys(req.body.sanitizedInput).forEach((key) => {
@@ -29,6 +33,29 @@ function validateAndConvertId(id: string): ObjectId | null {
     return null;  // Retornar null si el id no es válido
 }
 
+/**
+ * Convierte operarioId (string) en la referencia al Operario responsable.
+ * Devuelve un mensaje de error si el id no es válido o el operario no existe.
+ */
+async function resolverOperario(input: Record<string, any>): Promise<string | null> {
+    if (!('operarioId' in input)) return null;
+
+    const { operarioId } = input;
+    delete input.operarioId;
+
+    if (operarioId === null || operarioId === '') {
+        input.operario = null;
+        return null;
+    }
+
+    const id = toObjectId(operarioId);
+    if (!id) return 'operarioId inválido';
+    if (!(await operarioRepository.findOne({ _id: id }))) return 'El operario indicado no existe';
+
+    input.operario = id;
+    return null;
+}
+
 async function findAll(req: Request, res: Response) {
     const filters: Record<string, any> = {};
     
@@ -37,7 +64,13 @@ async function findAll(req: Request, res: Response) {
         filters.descripcion = { $regex: req.query.descripcion, $options: 'i' };
     }
     
-    res.json({ data: await repository.findAll(Object.keys(filters).length > 0 ? filters : undefined) });
+    if (req.query.operarioId) {
+        const operarioId = toObjectId(req.query.operarioId);
+        if (!operarioId) return res.status(400).send({ message: 'operarioId inválido' });
+        filters.operario = operarioId;
+    }
+
+    res.json({ data: await repository.findAll(filters) });
 }
 
 async function findOne(req: Request, res: Response) {
@@ -60,13 +93,18 @@ async function add(req: Request, res: Response) {
     const input = req.body.sanitizedInput;
     const imagenUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
 
-    const servicioInput = new Servicio({
+    const data: Record<string, any> = {
         descripcion: input.descripcion,
         importe_por_hora: input.importe_por_hora,
-        imagenUrl
-    });
+        imagenUrl,
+        operarioId: input.operarioId,
+    };
+    if (data.operarioId === undefined) delete data.operarioId;
 
-    const servicio = await repository.add(servicioInput);
+    const error = await resolverOperario(data);
+    if (error) return res.status(400).send({ message: error });
+
+    const servicio = await repository.add(data);
     return res.status(201).send({ message: 'servicio creado', data: servicio });
 }
 
@@ -85,6 +123,9 @@ async function update(req: Request, res: Response) {
     if (req.file) {
         updateData.imagenUrl = `/uploads/${req.file.filename}`;
     }
+
+    const error = await resolverOperario(updateData);
+    if (error) return res.status(400).send({ message: error });
 
     // Actualizar el servicio con los datos sanitizados
     const servicio = await repository.update(servicioId, updateData);

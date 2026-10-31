@@ -7,7 +7,8 @@ export const createClienteSchema = z.object({
   mail: z.string().email('Email inválido'),
   telefono: z.string().min(8, 'Teléfono inválido (mínimo 8 caracteres)'),
   direccion: z.string().min(1, 'Dirección requerida'),
-  razon_social: z.string().optional()
+  razon_social: z.string().optional(),
+  localidadId: z.string().nullable().optional()
 });
 
 export type ClienteInput = z.infer<typeof createClienteSchema>;

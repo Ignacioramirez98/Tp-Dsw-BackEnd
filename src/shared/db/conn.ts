@@ -1,13 +1,12 @@
 import { MikroORM } from '@mikro-orm/core';
 import { MongoDriver } from '@mikro-orm/mongodb';
+import ormConfig from '../../../mikro-orm.config.js';
 
 let orm: MikroORM<MongoDriver> | null = null;
 
 export async function initializeORM(): Promise<MikroORM<MongoDriver>> {
     if (orm) return orm;
-
-    const ormConfig = await import('../../../mikro-orm.config.js');
-    orm = await MikroORM.init<MongoDriver>(ormConfig.default);
+    orm = await MikroORM.init<MongoDriver>(ormConfig);
     return orm;
 }
 
@@ -16,9 +15,8 @@ export function getORM(): MikroORM<MongoDriver> {
     return orm;
 }
 
-//entity manager
-export const getEM = () => {
-    const instance = getORM();
-    return instance.em.fork();
-};
-
+/**
+ * EntityManager de la request actual. app.ts crea un RequestContext por request,
+ * así cada request trabaja con su propio identity map.
+ */
+export const getEM = () => getORM().em;

@@ -3,6 +3,7 @@ import { ProductoRepository } from "./producto.repository.js";
 import { Producto } from "./producto.entity.js";
 import { VentaRepository } from "../venta/venta.repository.js";
 import { ObjectId } from "mongodb";  // Importar ObjectId para la validación
+import { toNumber } from "../shared/utils/to-number.js";
 
 const repository = new ProductoRepository();
 const ventaRepository = new VentaRepository();
@@ -11,9 +12,9 @@ function sanitizeProductoInput(req: Request, res: Response, next: NextFunction) 
     req.body.sanitizedInput = {
         nombre: req.body.nombre,
         descripcion: req.body.descripcion,
-        importe_compra: req.body.importe_compra,
-        importe_venta: req.body.importe_venta,
-        stock: req.body.stock,
+        importe_compra: toNumber(req.body.importe_compra),
+        importe_venta: toNumber(req.body.importe_venta),
+        stock: toNumber(req.body.stock),
     };
 
     Object.keys(req.body.sanitizedInput).forEach((key) => {
