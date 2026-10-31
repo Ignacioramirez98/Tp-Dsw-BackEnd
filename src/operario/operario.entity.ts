@@ -16,7 +16,7 @@ export class Operario {
     mail!: string;
 
     @Property()
-    dni!: number;
+    dni!: string;
 
     @Property()
     telefono!: string;
@@ -27,4 +27,4 @@ export class Operario {
     constructor(data: Partial<Operario> = {}) {
         Object.assign(this, data);
     }
-}
+}

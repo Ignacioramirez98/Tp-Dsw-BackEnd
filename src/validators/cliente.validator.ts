@@ -1,14 +1,17 @@
 import { z } from 'zod';
+import { dni, email, objectIdOpcional, telefono, texto } from './common.js';
 
 export const createClienteSchema = z.object({
-  nombre: z.string().min(1, 'Nombre requerido'),
-  apellido: z.string().min(1, 'Apellido requerido'),
-  dni: z.string().min(7, 'DNI inválido (mínimo 7 caracteres)'),
-  mail: z.string().email('Email inválido'),
-  telefono: z.string().min(8, 'Teléfono inválido (mínimo 8 caracteres)'),
-  direccion: z.string().min(1, 'Dirección requerida'),
-  razon_social: z.string().optional(),
-  localidadId: z.string().nullable().optional()
+    nombre: texto('nombre', 100),
+    apellido: texto('apellido', 100),
+    dni,
+    mail: email,
+    telefono,
+    direccion: texto('direccion'),
+    razon_social: z.string().trim().max(200).optional(),
+    localidadId: objectIdOpcional('localidadId'),
 });
+
+export const updateClienteSchema = createClienteSchema.partial();
 
 export type ClienteInput = z.infer<typeof createClienteSchema>;
