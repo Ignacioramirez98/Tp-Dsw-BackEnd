@@ -1,7 +1,6 @@
 import { ClienteRepository } from './cliente.repository.js';
 import { LocalidadRepository } from '../localidad/localidad.repository.js';
 import { VentaRepository } from '../venta/venta.repository.js';
-import { createClienteSchema } from '../validators/cliente.validator.js';
 import { BadRequestError, ConflictError, NotFoundError } from '../shared/errors.js';
 import { parseId, toObjectId } from '../shared/utils/object-id.js';
 
@@ -35,8 +34,8 @@ export class ClienteService {
     }
 
     async create(input: Record<string, unknown>) {
-        const validated = createClienteSchema.parse(input); // ZodError -> 400
-        const data = await this.resolverLocalidad({ ...validated, razon_social: validated.razon_social || '' });
+        // input ya validado por createClienteSchema (validate.middleware)
+        const data = await this.resolverLocalidad({ ...input, razon_social: input.razon_social || '' });
         return this.repository.add(data);
     }
 

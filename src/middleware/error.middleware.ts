@@ -18,7 +18,9 @@ export function errorHandler(error: unknown, _req: Request, res: Response, _next
     }
 
     if (error instanceof ZodError) {
-        return res.status(400).json({ message: 'Validación fallida', errors: error.errors });
+        // Mensaje legible para mostrar en el front + detalle por campo
+        const detalle = error.errors.map((issue) => issue.message).join('. ');
+        return res.status(400).json({ message: `Validación fallida: ${detalle}`, errors: error.errors });
     }
 
     if (error instanceof UniqueConstraintViolationException) {
