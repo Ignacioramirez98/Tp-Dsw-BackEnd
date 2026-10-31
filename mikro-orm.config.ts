@@ -10,7 +10,7 @@ if (!process.env.MONGO_URI) {
 export default defineConfig({
   driver: MongoDriver,
   clientUrl: process.env.MONGO_URI,
-  dbName: 'crm',
+  dbName: process.env.MONGO_DB_NAME || 'crm',
   entities,
   debug: process.env.NODE_ENV === 'development',
 });

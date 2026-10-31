@@ -3,25 +3,25 @@ import { ObjectId } from 'mongodb';
 
 @Entity({ collection: 'productos' })
 export class Producto {
-    @PrimaryKey()
+    @PrimaryKey({ type: 'ObjectId' })
     _id!: ObjectId;
 
-    @Property()
+    @Property({ type: 'string' })
     nombre!: string;
 
-    @Property()
+    @Property({ type: 'string' })
     descripcion!: string;
 
-    @Property()
+    @Property({ type: 'number' })
     importe_compra!: number;
 
-    @Property()
+    @Property({ type: 'number' })
     importe_venta!: number;
 
-    @Property()
+    @Property({ type: 'number' })
     stock!: number;
 
-    @Property({ nullable: true })
+    @Property({ type: 'string', nullable: true })
     imagenUrl?: string;
 
     constructor(data: Partial<Producto> = {}) {

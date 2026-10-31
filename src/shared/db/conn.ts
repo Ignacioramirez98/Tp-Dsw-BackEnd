@@ -10,6 +10,13 @@ export async function initializeORM(): Promise<MikroORM<MongoDriver>> {
     return orm;
 }
 
+/** Cierra la conexión (la usan los tests al terminar). */
+export async function closeORM(): Promise<void> {
+    if (!orm) return;
+    await orm.close(true);
+    orm = null;
+}
+
 export function getORM(): MikroORM<MongoDriver> {
     if (!orm) throw new Error('ORM not initialized');
     return orm;

@@ -54,38 +54,21 @@ El servidor no arranca si falta `MONGO_URI` o `JWT_SECRET`.
 
 ## Scripts Disponibles
 
-### Ejecutar en Desarrollo (Hot Reload)
+| Comando | Qué hace |
+| --- | --- |
+| `npm run start:dev` | Compila y levanta el servidor en `http://localhost:3000` con recarga automática |
+| `npm run build` | Compila TypeScript a `dist/` |
+| `npm start` | Levanta el servidor ya compilado (`dist/src/server.js`) |
+| `npm test` | Corre todos los tests (unitarios + integración) |
+| `npm run test:unit` | Solo tests unitarios (no necesitan base de datos) |
+| `npm run test:integration` | Solo el test de integración (levanta una base MongoDB en memoria) |
+| `npm run test:watch` | Tests en modo watch |
+| `npm run test:ui` | Interfaz visual de Vitest |
 
-```bash
-npm run start:dev
-```
+### Tests
 
-Inicia el servidor en `http://localhost:3000`
-Recarga automática al cambiar archivos TypeScript
-
-### Compilar a JavaScript
-
-```bash
-npm run build
-```
-
-Genera carpeta `dist/` con código compilado
-
-### Ejecutar Tests
-
-```bash
-npm test
-```
-
-Ejecuta tests unitarios e integración con Vitest
-
-### Ejecutar Tests con UI
-
-```bash
-npm test:ui
-```
-
-Abre interfaz visual para ver resultados de tests
+- **Unitarios** (`src/tests/unit`): lógica de ventas, validaciones Zod, login y control de roles. Usan repositorios en memoria.
+- **Integración** (`src/tests/integration`): levanta la API completa con [supertest](https://github.com/ladjs/supertest) contra una base MongoDB de prueba (`crm_test`) y recorre el flujo login → alta de datos → venta → detalle. Por defecto usa `mongodb-memory-server`, que **descarga MongoDB la primera vez** (puede tardar un par de minutos). Para usar otro servidor de prueba: `TEST_MONGO_URI=mongodb://... npm run test:integration`. Nunca usa la base real.
 
 ---
 
@@ -93,7 +76,8 @@ Abre interfaz visual para ver resultados de tests
 
 ```
 src/
-├── app.ts                    # Configuración principal de Express
+├── app.ts                    # Arma la app Express (middlewares + rutas)
+├── server.ts                 # Conecta a la base y levanta el servidor
 ├── cliente/                  # Módulo de Clientes (CRUD + Login)
 ├── vendedor/                # Módulo de Vendedores
 ├── producto/                # Módulo de Productos
@@ -179,22 +163,6 @@ Authorization: Bearer <token>
 ### Y más...
 
 Módulos: Vendedores, Servicios, Localidades, Operarios
-
----
-
-## Pruebas
-
-### Ejecutar Tests
-
-```bash
-npm test
-```
-
-### Ver resultados en UI
-
-```bash
-npm test:ui
-```
 
 ---
 

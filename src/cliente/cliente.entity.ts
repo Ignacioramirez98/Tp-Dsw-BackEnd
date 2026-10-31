@@ -4,34 +4,34 @@ import { Localidad } from '../localidad/localidad.entity.js';
 
 @Entity({ collection: 'clientes' })
 export class Cliente {
-    @PrimaryKey()
+    @PrimaryKey({ type: 'ObjectId' })
     _id!: ObjectId;
 
-    @Property()
+    @Property({ type: 'string' })
     nombre!: string;
 
-    @Property()
+    @Property({ type: 'string' })
     apellido!: string;
 
-    @Property()
+    @Property({ type: 'string' })
     dni!: string;
 
-    @Property()
+    @Property({ type: 'string' })
     mail!: string;
 
-    @Property()
+    @Property({ type: 'string' })
     telefono!: string;
 
-    @Property()
+    @Property({ type: 'string' })
     direccion!: string;
 
-    @Property()
+    @Property({ type: 'string' })
     razon_social!: string;
 
     // Cliente N --- 1 Localidad (nullable para no romper clientes cargados antes)
     @ManyToOne(() => Localidad, { nullable: true, fieldName: 'localidadId' })
     localidad?: Localidad | null;
 
-    @Property({ nullable: true })
+    @Property({ type: 'string', nullable: true })
     imagenUrl?: string;
 }

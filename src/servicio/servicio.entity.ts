@@ -4,19 +4,19 @@ import { Operario } from '../operario/operario.entity.js';
 
 @Entity({ collection: 'servicios' })
 export class Servicio {
-    @PrimaryKey()
+    @PrimaryKey({ type: 'ObjectId' })
     _id!: ObjectId;
 
-    @Property()
+    @Property({ type: 'string' })
     descripcion!: string;
 
-    @Property()
+    @Property({ type: 'number' })
     importe_por_hora!: number;
 
     // Servicio N --- 1 Operario responsable
     @ManyToOne(() => Operario, { nullable: true, fieldName: 'operarioId' })
     operario?: Operario | null;
 
-    @Property({ nullable: true })
+    @Property({ type: 'string', nullable: true })
     imagenUrl?: string;
 }

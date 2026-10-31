@@ -3,25 +3,25 @@ import { ObjectId } from 'mongodb';
 
 @Entity({ collection: 'operarios' })
 export class Operario {
-    @PrimaryKey()
+    @PrimaryKey({ type: 'ObjectId' })
     _id!: ObjectId;
 
-    @Property()
+    @Property({ type: 'string' })
     nombre!: string;
 
-    @Property()
+    @Property({ type: 'string' })
     apellido!: string;
 
-    @Property()
+    @Property({ type: 'string' })
     mail!: string;
 
-    @Property()
+    @Property({ type: 'string' })
     dni!: string;
 
-    @Property()
+    @Property({ type: 'string' })
     telefono!: string;
 
-    @Property()
+    @Property({ type: 'string' })
     rol: string = 'operario';
 
     constructor(data: Partial<Operario> = {}) {

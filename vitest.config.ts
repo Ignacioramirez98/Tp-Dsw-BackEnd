@@ -7,5 +7,8 @@ export default defineConfig({
     include: ['src/tests/**/*.test.ts'],
     exclude: ['node_modules', 'dist'],
     setupFiles: ['src/tests/setup.ts'],
+    // El test de integración levanta una base MongoDB; la primera vez puede tardar en descargarla
+    hookTimeout: 120_000,
+    testTimeout: 30_000,
   },
 });
