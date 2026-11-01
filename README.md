@@ -50,6 +50,26 @@ cp .env.example .env
 
 El servidor no arranca si falta `MONGO_URI` o `JWT_SECRET`.
 
+#### 4 Cargar datos iniciales (opcional)
+
+Los usuarios administradores no se pueden crear desde la API. Para una base nueva:
+
+```bash
+npm run seed            # crea el usuario admin
+npm run seed -- --demo  # además carga datos de ejemplo y un usuario por rol
+```
+
+El script no duplica registros: si ya existen, los deja como están. Las credenciales del admin se toman de `SEED_ADMIN_USUARIO` y `SEED_ADMIN_PASSWORD` del `.env` (por defecto `admin` / `admin123`).
+
+Usuarios de prueba que crea `--demo`:
+
+| Usuario | Contraseña | Rol |
+| --- | --- | --- |
+| `admin` | `admin123` | admin |
+| `vendedor` | `vendedor123` | vendedor |
+| `operario` | `operario123` | operario |
+| `cliente` | `cliente123` | cliente |
+
 ---
 
 ## Scripts Disponibles
@@ -64,6 +84,7 @@ El servidor no arranca si falta `MONGO_URI` o `JWT_SECRET`.
 | `npm run test:integration` | Solo el test de integración (levanta una base MongoDB en memoria) |
 | `npm run test:watch` | Tests en modo watch |
 | `npm run test:ui` | Interfaz visual de Vitest |
+| `npm run seed` | Crea el usuario admin (`-- --demo` para datos de ejemplo) |
 
 ### Tests
 

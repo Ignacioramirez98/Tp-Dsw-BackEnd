@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "migrar:items-venta": "node dist/scripts/migrar-items-venta.js"
+    "migrar:items-venta": "node dist/scripts/migrar-items-venta.js",
+    "seed": "tsc -p ./tsconfig.json && node ./dist/scripts/seed.js"
   },
   "keywords": [],
   "author": "",
