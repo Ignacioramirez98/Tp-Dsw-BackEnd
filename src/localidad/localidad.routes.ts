@@ -11,8 +11,9 @@ const validarAlta = validateBody(createLocalidadSchema);
 const validarCambios = validateBody(updateLocalidadSchema);
 
 // Lectura de catálogo - permitido para cliente, vendedor y admin
-localidadRouter.get('/', protectRoute, requireRole('cliente', 'vendedor', 'admin'), asyncHandler(findAll));
-localidadRouter.get('/:id', protectRoute, requireRole('cliente', 'vendedor', 'admin'), asyncHandler(findOne));
+// Catálogo: lo leen todos los roles (el cliente lo usa al registrarse), lo administra el admin
+localidadRouter.get('/', protectRoute, requireRole('admin', 'vendedor', 'operario', 'cliente'), asyncHandler(findAll));
+localidadRouter.get('/:id', protectRoute, requireRole('admin', 'vendedor', 'operario', 'cliente'), asyncHandler(findOne));
 localidadRouter.post('/', protectRoute, requireRole('admin'), validarAlta, asyncHandler(add));
 localidadRouter.put('/:id', protectRoute, requireRole('admin'), validarCambios, asyncHandler(update));
 localidadRouter.patch('/:id', protectRoute, requireRole('admin'), validarCambios, asyncHandler(update));

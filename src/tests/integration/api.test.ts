@@ -167,3 +167,67 @@ describe('API - flujo de una venta', () => {
         expect((await request(app).delete(`/productos/${ids.producto}`).set(auth(tokenAdmin))).status).toBe(200);
     });
 });
+
+describe('API - permisos por rol y por propietario', () => {
+    const ids: Record<string, string> = {};
+    let tokenJuan = '';
+
+    beforeAll(async () => {
+        const nuevo = (dni: string, nombre: string) => request(app).post('/clientes').send({
+            nombre, apellido: 'Test', dni, mail: `${nombre}@mail.com`, telefono: '3415550000', direccion: 'Calle 1',
+        });
+        ids.juan = (await nuevo('31000001', 'juan')).body.data.id;
+        ids.maria = (await nuevo('31000002', 'maria')).body.data.id;
+
+        const producto = await request(app).post('/productos').set(auth(tokenAdmin))
+            .send({ nombre: 'Rastra', descripcion: 'd', importe_compra: 1, importe_venta: 500, stock: 10 });
+        ids.producto = producto.body.data.id;
+
+        // Usuario de Juan vinculado a su ficha de cliente
+        await request(app).post('/usuarios').set(auth(tokenAdmin))
+            .send({ usuario: 'juan', contraseña: 'juan123', rol: 'cliente', clienteId: ids.juan });
+        tokenJuan = (await request(app).post('/usuarios/login').send({ usuario: 'juan', contraseña: 'juan123' })).body.token;
+
+        // Una venta de María, cargada por el admin
+        ids.ventaMaria = (await request(app).post('/ventas').set(auth(tokenAdmin))
+            .send({ clienteId: ids.maria, items: [{ productoId: ids.producto, cantidad: 1 }] })).body.data.id;
+    });
+
+    it('un cliente ve y edita su propia ficha', async () => {
+        expect((await request(app).get(`/clientes/${ids.juan}`).set(auth(tokenJuan))).status).toBe(200);
+        const res = await request(app).patch(`/clientes/${ids.juan}`).set(auth(tokenJuan)).send({ telefono: '3415559999' });
+        expect(res.status).toBe(200);
+    });
+
+    it('un cliente no puede ver, editar ni listar a otros clientes', async () => {
+        expect((await request(app).get(`/clientes/${ids.maria}`).set(auth(tokenJuan))).status).toBe(403);
+        expect((await request(app).patch(`/clientes/${ids.maria}`).set(auth(tokenJuan)).send({ telefono: '3415550001' })).status).toBe(403);
+        expect((await request(app).get('/clientes').set(auth(tokenJuan))).status).toBe(403);
+    });
+
+    it('un cliente genera un pedido propio y pendiente aunque mande otro clienteId', async () => {
+        const res = await request(app).post('/ventas').set(auth(tokenJuan)).send({
+            clienteId: ids.maria, estado: 'concretada', items: [{ productoId: ids.producto, cantidad: 2 }],
+        });
+        expect(res.status).toBe(201);
+        expect(res.body.data.cliente.id).toBe(ids.juan);
+        expect(res.body.data.estado).toBe('pendiente');
+        ids.ventaJuan = res.body.data.id;
+    });
+
+    it('un cliente solo ve sus propias ventas', async () => {
+        const lista = await request(app).get('/ventas').set(auth(tokenJuan));
+        expect(lista.status).toBe(200);
+        expect(lista.body.data.map((v: { id: string }) => v.id)).toEqual([ids.ventaJuan]);
+
+        expect((await request(app).get(`/ventas/${ids.ventaJuan}`).set(auth(tokenJuan))).status).toBe(200);
+        expect((await request(app).get(`/ventas/${ids.ventaMaria}`).set(auth(tokenJuan))).status).toBe(404);
+    });
+
+    it('un cliente no puede modificar ni borrar ventas, ni gestionar el catálogo', async () => {
+        expect((await request(app).patch(`/ventas/${ids.ventaJuan}`).set(auth(tokenJuan)).send({ estado: 'concretada' })).status).toBe(403);
+        expect((await request(app).delete(`/ventas/${ids.ventaJuan}`).set(auth(tokenJuan))).status).toBe(403);
+        expect((await request(app).post('/productos').set(auth(tokenJuan)).send({})).status).toBe(403);
+        expect((await request(app).get('/productos').set(auth(tokenJuan))).status).toBe(200);
+    });
+});

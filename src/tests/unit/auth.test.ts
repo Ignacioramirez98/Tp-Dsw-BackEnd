@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { ObjectId } from 'mongodb';
-import { protectRoute, requireRole } from '../../middleware/roleAuth.middleware.js';
+import { protectRoute, requireRole, soloPropio } from '../../middleware/roleAuth.middleware.js';
 import { UsuarioService } from '../../usuario/usuario.service.js';
 import { ForbiddenError, UnauthorizedError } from '../../shared/errors.js';
 
@@ -63,6 +63,32 @@ describe('requireRole', () => {
     });
 });
 
+describe('soloPropio', () => {
+    const miId = 'a'.repeat(24);
+    const otroId = 'b'.repeat(24);
+    const propio = soloPropio('cliente', 'clienteId');
+
+    it('deja a un cliente acceder a su propia ficha', () => {
+        const next = vi.fn();
+        propio({ user: { rol: 'cliente', clienteId: miId }, params: { id: miId } } as any, mockResponse(), next);
+        expect(next).toHaveBeenCalled();
+    });
+
+    it('responde 403 si un cliente pide la ficha de otro', () => {
+        const res = mockResponse();
+        const next = vi.fn();
+        propio({ user: { rol: 'cliente', clienteId: miId }, params: { id: otroId } } as any, res, next);
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    it('no restringe a otros roles (por ejemplo el admin)', () => {
+        const next = vi.fn();
+        propio({ user: { rol: 'admin' }, params: { id: otroId } } as any, mockResponse(), next);
+        expect(next).toHaveBeenCalled();
+    });
+});
+
 describe('UsuarioService.login', () => {
     const clienteId = new ObjectId();
 
@@ -87,6 +113,7 @@ describe('UsuarioService.login', () => {
         const payload = jwt.verify(token, SECRET) as jwt.JwtPayload;
         expect(payload.rol).toBe('cliente');
         expect(payload.usuario).toBe('juan');
+        expect(String(payload.clienteId)).toBe(clienteId.toHexString()); // necesario para "solo lo propio"
         expect(data).toMatchObject({ usuario: 'juan', rol: 'cliente', vendedorId: null });
         expect(data.clienteId).toEqual(clienteId);
         expect(data).not.toHaveProperty('contraseña');

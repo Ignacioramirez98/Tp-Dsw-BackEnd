@@ -9,16 +9,16 @@ export async function findAll(req: Request, res: Response) {
         estado: queryString(req, 'estado'),
         clienteId: queryString(req, 'clienteId'),
         vendedorId: queryString(req, 'vendedorId'),
-    });
+    }, req.user);
     res.json({ data });
 }
 
 export async function findOne(req: Request, res: Response) {
-    res.json({ data: await service.findOne(req.params.id) });
+    res.json({ data: await service.findOne(req.params.id, req.user) });
 }
 
 export async function add(req: Request, res: Response) {
-    const data = await service.create(req.body.sanitizedInput);
+    const data = await service.create(req.body.sanitizedInput, req.user);
     res.status(201).json({ message: 'Venta creada', data });
 }
 
