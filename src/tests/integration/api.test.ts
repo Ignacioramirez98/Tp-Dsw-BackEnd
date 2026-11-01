@@ -231,3 +231,122 @@ describe('API - permisos por rol y por propietario', () => {
         expect((await request(app).get('/productos').set(auth(tokenJuan))).status).toBe(200);
     });
 });
+
+describe('API - CUU Concretar Venta', () => {
+    const ids: Record<string, string> = {};
+    let tokenVendedor = '';
+    let tokenPedro = '';
+    const stock = async () => (await request(app).get(`/productos/${ids.producto}`).set(auth(tokenAdmin))).body.data.stock;
+
+    beforeAll(async () => {
+        ids.vendedor = (await request(app).post('/vendedores').set(auth(tokenAdmin)).send({
+            nombre: 'Laura', apellido: 'Martínez', mail: 'laura@mail.com', dni: '29111222', telefono: '3415553333',
+        })).body.data.id;
+        ids.pedro = (await request(app).post('/clientes').send({
+            nombre: 'Pedro', apellido: 'Sosa', dni: '32111222', mail: 'pedro@mail.com', telefono: '3415554444', direccion: 'Ruta 9',
+        })).body.data.id;
+        ids.producto = (await request(app).post('/productos').set(auth(tokenAdmin))
+            .send({ nombre: 'Sembradora', descripcion: 'd', importe_compra: 1, importe_venta: 900, stock: 3 })).body.data.id;
+
+        await request(app).post('/usuarios').set(auth(tokenAdmin))
+            .send({ usuario: 'laura', contraseña: 'laura123', rol: 'vendedor', vendedorId: ids.vendedor });
+        await request(app).post('/usuarios').set(auth(tokenAdmin))
+            .send({ usuario: 'pedro', contraseña: 'pedro123', rol: 'cliente', clienteId: ids.pedro });
+        tokenVendedor = (await request(app).post('/usuarios/login').send({ usuario: 'laura', contraseña: 'laura123' })).body.token;
+        tokenPedro = (await request(app).post('/usuarios/login').send({ usuario: 'pedro', contraseña: 'pedro123' })).body.token;
+    });
+
+    it('el cliente hace un pedido: queda pendiente y todavía no descuenta stock', async () => {
+        const res = await request(app).post('/ventas').set(auth(tokenPedro))
+            .send({ items: [{ productoId: ids.producto, cantidad: 2 }] });
+        expect(res.status).toBe(201);
+        expect(res.body.data.estado).toBe('pendiente');
+        expect(res.body.data.vendedor ?? null).toBeNull();
+        ids.pedido = res.body.data.id;
+        expect(await stock()).toBe(3);
+    });
+
+    it('el cliente no puede concretar su propio pedido', async () => {
+        expect((await request(app).post(`/ventas/${ids.pedido}/concretar`).set(auth(tokenPedro))).status).toBe(403);
+    });
+
+    it('el vendedor concreta el pedido: descuenta stock, queda a su nombre y con fecha de venta', async () => {
+        const entrega = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        const res = await request(app).post(`/ventas/${ids.pedido}/concretar`).set(auth(tokenVendedor))
+            .send({ fechaEntrega: entrega });
+
+        expect(res.body.message).toBe('Venta concretada');
+        expect(res.status).toBe(200);
+        expect(res.body.data).toMatchObject({ estado: 'concretada', vendedor: { nombre: 'Laura' } });
+        expect(res.body.data.fechaDeVenta).toEqual(expect.any(String));
+        expect(res.body.data.fechaEntrega.slice(0, 10)).toBe(entrega);
+        expect(await stock()).toBe(1);
+    });
+
+    it('no se puede concretar dos veces ni cambiar los productos de una venta concretada', async () => {
+        const otraVez = await request(app).post(`/ventas/${ids.pedido}/concretar`).set(auth(tokenVendedor));
+        expect(otraVez.status).toBe(409);
+        expect(otraVez.body.message).toBe('No se puede concretar una venta concretada');
+
+        const cambio = await request(app).patch(`/ventas/${ids.pedido}`).set(auth(tokenVendedor))
+            .send({ items: [{ productoId: ids.producto, cantidad: 1 }] });
+        expect(cambio.status).toBe(409);
+    });
+
+    it('sin stock suficiente responde 409 y la venta sigue pendiente', async () => {
+        ids.pedidoGrande = (await request(app).post('/ventas').set(auth(tokenPedro))
+            .send({ items: [{ productoId: ids.producto, cantidad: 5 }] })).body.data.id;
+
+        const res = await request(app).post(`/ventas/${ids.pedidoGrande}/concretar`).set(auth(tokenVendedor));
+        expect(res.status).toBe(409);
+        expect(res.body.message).toBe('Stock insuficiente: Sembradora (pedido 5, disponible 1)');
+        expect((await request(app).get(`/ventas/${ids.pedidoGrande}`).set(auth(tokenAdmin))).body.data.estado).toBe('pendiente');
+        expect(await stock()).toBe(1);
+    });
+
+    it('el cliente cancela su pedido pendiente, pero no una compra concretada', async () => {
+        expect((await request(app).post(`/ventas/${ids.pedido}/cancelar`).set(auth(tokenPedro))).status).toBe(409);
+
+        const res = await request(app).post(`/ventas/${ids.pedidoGrande}/cancelar`).set(auth(tokenPedro));
+        expect(res.status).toBe(200);
+        expect(res.body.data.estado).toBe('cancelada');
+    });
+
+    it('una venta concretada no se borra; al cancelarla el stock vuelve y recién ahí se puede borrar', async () => {
+        expect((await request(app).delete(`/ventas/${ids.pedido}`).set(auth(tokenAdmin))).status).toBe(409);
+
+        const res = await request(app).post(`/ventas/${ids.pedido}/cancelar`).set(auth(tokenVendedor));
+        expect(res.status).toBe(200);
+        expect(res.body.data.fechaCancelacion).toEqual(expect.any(String));
+        expect(await stock()).toBe(3);
+
+        expect((await request(app).delete(`/ventas/${ids.pedido}`).set(auth(tokenAdmin))).status).toBe(200);
+    });
+});
+
+describe('API - listado de ventas por rango de fecha', () => {
+    const dia = (desplazamiento: number) => {
+        // Fecha de Argentina (UTC-3), igual que la interpreta el backend
+        const fecha = new Date(Date.now() - 3 * 60 * 60 * 1000 + desplazamiento * 24 * 60 * 60 * 1000);
+        return fecha.toISOString().slice(0, 10);
+    };
+
+    it('incluye las ventas del rango (con el día "hasta" completo) y excluye las de afuera', async () => {
+        const hoy = await request(app).get(`/ventas?desde=${dia(0)}&hasta=${dia(0)}`).set(auth(tokenAdmin));
+        expect(hoy.status).toBe(200);
+        expect(hoy.body.data.length).toBeGreaterThan(0);
+
+        const futuro = await request(app).get(`/ventas?desde=${dia(1)}`).set(auth(tokenAdmin));
+        expect(futuro.body.data).toHaveLength(0);
+
+        const pasado = await request(app).get(`/ventas?hasta=${dia(-1)}`).set(auth(tokenAdmin));
+        expect(pasado.body.data).toHaveLength(0);
+    });
+
+    it('rechaza fechas inválidas o un rango invertido', async () => {
+        expect((await request(app).get('/ventas?desde=ayer').set(auth(tokenAdmin))).status).toBe(400);
+        const invertido = await request(app).get(`/ventas?desde=${dia(1)}&hasta=${dia(0)}`).set(auth(tokenAdmin));
+        expect(invertido.status).toBe(400);
+        expect(invertido.body.message).toBe('La fecha "desde" no puede ser posterior a "hasta"');
+    });
+});

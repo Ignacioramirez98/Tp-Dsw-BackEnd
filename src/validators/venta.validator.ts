@@ -8,12 +8,11 @@ const itemSchema = z.object({
         .min(1, 'La cantidad de cada ítem debe ser un entero mayor a 0'),
 });
 
+// El estado, la fecha de venta y la de cancelación no se cargan a mano:
+// cambian con POST /ventas/:id/concretar y /ventas/:id/cancelar (si llegan, se ignoran).
 const ventaBase = z.object({
-    estado: z.string().trim().min(1, 'estado no puede estar vacío').max(50).optional(),
     fechaContacto: fechaOpcional('fechaContacto'),
-    fechaDeVenta: fechaOpcional('fechaDeVenta'),
     fechaEntrega: fechaOpcional('fechaEntrega'),
-    fechaCancelacion: fechaOpcional('fechaCancelacion'),
     vendedorId: objectIdOpcional('vendedorId'),
     items: z.array(itemSchema, { invalid_type_error: 'items debe ser una lista' }).optional(),
     productoIds: z.array(objectId('productoId'), { invalid_type_error: 'productoIds debe ser una lista' }).optional(), // formato anterior
@@ -30,3 +29,8 @@ export const createVentaSchema = ventaBase
     );
 
 export const updateVentaSchema = ventaBase.extend({ clienteId: objectId('clienteId').optional() });
+
+export const concretarVentaSchema = z.object({
+    vendedorId: objectIdOpcional('vendedorId'),
+    fechaEntrega: fechaOpcional('fechaEntrega'),
+});

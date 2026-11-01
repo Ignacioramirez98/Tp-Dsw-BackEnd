@@ -9,6 +9,8 @@ export async function findAll(req: Request, res: Response) {
         estado: queryString(req, 'estado'),
         clienteId: queryString(req, 'clienteId'),
         vendedorId: queryString(req, 'vendedorId'),
+        desde: queryString(req, 'desde'),
+        hasta: queryString(req, 'hasta'),
     }, req.user);
     res.json({ data });
 }
@@ -30,4 +32,14 @@ export async function update(req: Request, res: Response) {
 export async function remove(req: Request, res: Response) {
     await service.remove(req.params.id);
     res.json({ message: 'Venta eliminada exitosamente' });
+}
+
+export async function concretar(req: Request, res: Response) {
+    const data = await service.concretar(req.params.id, req.body.sanitizedInput, req.user);
+    res.json({ message: 'Venta concretada', data });
+}
+
+export async function cancelar(req: Request, res: Response) {
+    const data = await service.cancelar(req.params.id, req.user);
+    res.json({ message: 'Venta cancelada', data });
 }

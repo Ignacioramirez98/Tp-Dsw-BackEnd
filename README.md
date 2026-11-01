@@ -89,7 +89,7 @@ Usuarios de prueba que crea `--demo`:
 ### Tests
 
 - **Unitarios** (`src/tests/unit`): lógica de ventas, validaciones Zod, login y control de roles. Usan repositorios en memoria.
-- **Integración** (`src/tests/integration`): levanta la API completa con [supertest](https://github.com/ladjs/supertest) contra una base MongoDB de prueba (`crm_test`) y recorre el flujo login → alta de datos → venta → detalle. Por defecto usa `mongodb-memory-server`, que **descarga MongoDB la primera vez** (puede tardar un par de minutos). Para usar otro servidor de prueba: `TEST_MONGO_URI=mongodb://... npm run test:integration`. Nunca usa la base real.
+- **Integración** (`src/tests/integration`): levanta la API completa con [supertest](https://github.com/ladjs/supertest) contra una base MongoDB de prueba (`crm_test`) y recorre el flujo login → alta de datos → venta → detalle, el CUU Concretar Venta (stock, estados y permisos) y el filtro por rango de fechas. Por defecto usa `mongodb-memory-server`, que **descarga MongoDB la primera vez** (puede tardar un par de minutos). Para usar otro servidor de prueba: `TEST_MONGO_URI=mongodb://... npm run test:integration`. Nunca usa la base real.
 
 ---
 
@@ -176,10 +176,25 @@ Authorization: Bearer <token>
 
 ### Ventas
 
-- `GET /ventas` - Listar ventas (con filtros: estado, clienteId)
-- `POST /ventas` - Crear venta
-- `PUT /ventas/:id` - Actualizar venta
-- `DELETE /ventas/:id` - Eliminar venta
+- `GET /ventas` - Listar ventas, de la más nueva a la más vieja. Filtros: `estado`, `clienteId`, `vendedorId` y rango de fecha del pedido `desde` / `hasta` (AAAA-MM-DD, ambos días incluidos)
+- `GET /ventas/:id` - Detalle completo (cliente con localidad, vendedor, productos y servicios)
+- `POST /ventas` - Crear venta (siempre nace `pendiente`)
+- `PUT/PATCH /ventas/:id` - Actualizar venta (cliente, productos y servicios solo mientras está pendiente)
+- `POST /ventas/:id/concretar` - **CUU Concretar Venta** (ver abajo)
+- `POST /ventas/:id/cancelar` - Cancelar la venta
+- `DELETE /ventas/:id` - Eliminar venta (solo pendientes o canceladas)
+
+#### Ciclo de vida de una venta
+
+```
+pendiente ──concretar──▶ concretada ──facturar──▶ facturada
+    │                        │
+    └───────cancelar─────────┴──▶ cancelada
+```
+
+- **Concretar** (vendedor o admin): verifica que haya stock de todos los productos y lo descuenta, deja la venta a nombre del vendedor (el admin indica `vendedorId`) y registra la fecha de venta. Acepta `fechaEntrega` opcional (no anterior a hoy). Si falta stock responde `409` con el detalle (`Stock insuficiente: Tractor (pedido 2, disponible 1)`) y no cambia nada.
+- **Cancelar**: vendedor o admin cancelan una venta pendiente o concretada; si estaba concretada, el stock vuelve. El cliente solo puede cancelar sus pedidos pendientes.
+- Una transición no permitida (ej. concretar una venta cancelada) responde `409`.
 
 ### Y más...
 
@@ -200,10 +215,10 @@ Todas las rutas (salvo el login y el alta de cliente) requieren el header `Autho
 | Clientes | ABM | ver, crear y editar | ver | ver y editar el propio |
 | Vendedores | ABM | ver; editar el propio | — | — |
 | Operarios | ABM | ver | ver; editar el propio | — |
-| Ventas | ABM | ver, crear y editar | — | ver las propias; crear un pedido propio |
+| Ventas | ABM, concretar y cancelar | ver, crear, editar, concretar y cancelar | — | ver las propias; crear y cancelar un pedido propio pendiente |
 | Usuarios | ABM | — | — | — |
 
-Cuando un cliente crea una venta, la API la registra siempre a su nombre, en estado `pendiente` y sin vendedor, aunque envíe otros datos.
+Cuando un cliente crea una venta, la API la registra siempre a su nombre, en estado `pendiente` y sin vendedor, aunque envíe otros datos. El estado no se edita a mano: solo cambia con concretar y cancelar.
 
 ---
 
