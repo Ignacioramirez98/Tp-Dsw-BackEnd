@@ -10,7 +10,6 @@ POST http://localhost:3000/ventas
 Content-Type: application/json
 
 {
-    "estado": "pendiente",
     "fechaContacto": "2024-08-15",
     "clienteId": "672daac323a2c9f8e48eabc3",
     "vendedorId": "66983e1c8a0b2c3d4e5f6a7b",
@@ -26,11 +25,8 @@ PUT http://localhost:3000/ventas/669874787690bc5f60d711fd
 Content-Type: application/json
 
 {
-    "estado": "Finalizada",
     "fechaContacto": "2024-08-16",
-    "fechaDeVenta": "2024-09-03",
     "fechaEntrega": "2024-09-10",
-    "fechaCancelacion": null,
     "clienteId": "672daac323a2c9f8e48eabc3",
     "items": [
         { "productoId": "672daac323a2c9f8e48eabc4", "cantidad": 3 }
@@ -38,14 +34,27 @@ Content-Type: application/json
     "servicioIds": []
 }
 
-### Modificar una venta (parcial)
+### Modificar una venta (parcial; productos/servicios/cliente solo si está pendiente)
 PATCH http://localhost:3000/ventas/669874787690bc5f60d711fd
 Content-Type: application/json
 
 {
-    "estado": "Cancelada",
-    "fechaCancelacion": "2024-09-05"
+    "fechaEntrega": "2026-11-20"
 }
 
+### Listar ventas por rango de fecha y estado
+GET http://localhost:3000/ventas?desde=2026-10-01&hasta=2026-10-31&estado=pendiente
+
+### CUU Concretar Venta (vendedor: queda a su nombre; admin: indicar vendedorId)
+POST http://localhost:3000/ventas/669874787690bc5f60d711fd/concretar
+Content-Type: application/json
+
+{
+    "fechaEntrega": "2026-11-20"
+}
+
+### Cancelar una venta (si estaba concretada, devuelve el stock)
+POST http://localhost:3000/ventas/669874787690bc5f60d711fd/cancelar
+
 ### Borrar una venta
-DELETE http://localhost:3000/ventas/669878c25647790e562e97a5
+DELETE http://localhost:3000/ventas/669878c25647790e562e97a5

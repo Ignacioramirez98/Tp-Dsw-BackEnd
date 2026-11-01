@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { leerFecha } from '../shared/utils/fechas.js';
 
 /**
  * Reglas reutilizables para los schemas de entrada.
@@ -47,10 +48,10 @@ export const objectId = (campo: string) =>
 /** Id opcional que se puede vaciar con null o '' (para quitar una relación). */
 export const objectIdOpcional = (campo: string) => z.union([objectId(campo), z.literal(''), z.null()]).optional();
 
-/** Fecha opcional: acepta texto ISO (2026-11-20) o Date; null o '' la borran. */
+/** Fecha opcional: acepta AAAA-MM-DD (día en Argentina), ISO completa o Date; null o '' la borran. */
 export const fechaOpcional = (campo: string) =>
     z.preprocess(
-        (value) => (value === '' ? null : typeof value === 'string' || typeof value === 'number' ? new Date(value) : value),
+        (value) => (value === '' ? null : typeof value === 'string' || typeof value === 'number' ? leerFecha(value) : value),
         z.date({ errorMap: () => ({ message: `${campo} no es una fecha válida` }) }).nullable(),
     ).optional();
 

@@ -13,6 +13,14 @@ export class VentaRepository extends BaseRepository<Venta> {
     protected readonly entity = Venta;
     protected readonly populate = ['cliente', 'cliente.localidad', 'vendedor', 'items', 'items.producto', 'servicios'];
 
+    /** Igual que findAll, pero de la más nueva a la más vieja. */
+    public override async findAll(filters: Record<string, unknown> = {}): Promise<Venta[]> {
+        return this.em.find(Venta, filters, {
+            populate: this.populate as any,
+            orderBy: { fechaContacto: 'desc' },
+        });
+    }
+
     /** Crea la venta junto con sus ítems en un solo flush. */
     public async addConItems(data: any, items: ItemVentaInput[]): Promise<Venta> {
         const venta = this.em.create(Venta, data);
@@ -37,6 +45,21 @@ export class VentaRepository extends BaseRepository<Venta> {
         }
         await this.em.flush();
         return venta;
+    }
+
+    /** Venta con sus ítems y productos cargados, lista para cambiar de estado y tocar el stock. */
+    public async findParaGestionar(id: ObjectId): Promise<Venta | undefined> {
+        const venta = await this.em.findOne(Venta, { _id: id }, { populate: ['items', 'items.producto', 'cliente'] });
+        return venta ?? undefined;
+    }
+
+    /**
+     * Guarda en un solo flush los cambios de la venta y de las entidades que se modificaron
+     * junto con ella (ej. el stock de los productos), así no queda un estado a medias.
+     */
+    public async guardarCambios(venta: Venta, data: Record<string, unknown>): Promise<void> {
+        this.em.assign(venta, data);
+        await this.em.flush();
     }
 
     public async delete(item: { _id: ObjectId }): Promise<Venta | undefined> {
