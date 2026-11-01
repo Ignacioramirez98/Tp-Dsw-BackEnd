@@ -35,13 +35,15 @@ export class UsuarioService {
         const passwordValida = await bcrypt.compare(contraseña, usuario.contraseña);
         if (!passwordValida) throw new UnauthorizedError('Usuario o contraseña inválidos');
 
+        const { _id, usuario: nombre, rol, clienteId, vendedorId, operarioId } = toUsuarioDTO(usuario);
+
+        // El token lleva el perfil vinculado para poder controlar "solo lo propio" en cada ruta
         const token = jwt.sign(
-            { id: usuario._id, usuario: usuario.usuario, rol: usuario.rol, usuarioId: usuario._id },
+            { id: _id, usuario: nombre, rol, usuarioId: _id, clienteId, vendedorId, operarioId },
             config.jwtSecret,
             { expiresIn: config.jwtExpiresIn as jwt.SignOptions['expiresIn'] },
         );
 
-        const { _id, usuario: nombre, rol, clienteId, vendedorId, operarioId } = toUsuarioDTO(usuario);
         return { token, data: { usuarioId: _id, usuario: nombre, rol, clienteId, vendedorId, operarioId } };
     }
 

@@ -20,8 +20,10 @@ const ventaBase = z.object({
     servicioIds: z.array(objectId('servicioId'), { invalid_type_error: 'servicioIds debe ser una lista' }).optional(),
 });
 
+// clienteId es opcional acá: cuando el pedido lo hace un cliente se toma de su sesión;
+// para vendedor/admin el servicio exige que venga.
 export const createVentaSchema = ventaBase
-    .extend({ clienteId: objectId('clienteId') })
+    .extend({ clienteId: objectId('clienteId').optional() })
     .refine(
         (venta) => (venta.items?.length ?? 0) + (venta.productoIds?.length ?? 0) + (venta.servicioIds?.length ?? 0) > 0,
         { message: 'La venta debe tener al menos un producto o un servicio', path: ['items'] },

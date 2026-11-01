@@ -1,12 +1,12 @@
-import { User } from './user'; 
-import { Express } from 'express';
+import type { AuthUser } from '../middleware/roleAuth.middleware.js';
 
 declare global {
     namespace Express {
         interface Request {
-            user?: User;  
-            file?: Express.Multer.File;  
-            files?: Express.Multer.File[];
+            /** Usuario autenticado (lo carga protectRoute a partir del JWT). */
+            user?: AuthUser;
         }
     }
 }
+
+export {};

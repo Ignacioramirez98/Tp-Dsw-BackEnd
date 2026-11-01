@@ -4,7 +4,8 @@ import { ClienteRepository } from '../cliente/cliente.repository.js';
 import { VendedorRepository } from '../Vendedor/vendedor.repository.js';
 import { ProductoRepository } from '../producto/producto.repository.js';
 import { ServicioRepository } from '../servicio/servicio.repository.js';
-import { BadRequestError, NotFoundError } from '../shared/errors.js';
+import { BadRequestError, ForbiddenError, NotFoundError } from '../shared/errors.js';
+import type { AuthUser } from '../middleware/roleAuth.middleware.js';
 import { parseId, toObjectId } from '../shared/utils/object-id.js';
 
 export interface VentaFiltros {
@@ -12,6 +13,9 @@ export interface VentaFiltros {
     clienteId?: string;
     vendedorId?: string;
 }
+
+/** Quién hace la petición (null en usos internos/tests: sin restricciones). */
+export type Actor = Pick<AuthUser, 'rol' | 'clienteId'> | null | undefined;
 
 const CAMPOS_SIMPLES = ['estado', 'fechaContacto', 'fechaDeVenta', 'fechaEntrega', 'fechaCancelacion'];
 
@@ -24,21 +28,33 @@ export class VentaService {
         private readonly servicioRepository = new ServicioRepository(),
     ) {}
 
-    findAll(filtros: VentaFiltros = {}) {
+    findAll(filtros: VentaFiltros = {}, actor?: Actor) {
         const query: Record<string, unknown> = {};
         if (filtros.estado) query.estado = filtros.estado;
         if (filtros.clienteId) query.cliente = parseId(filtros.clienteId, 'clienteId');
         if (filtros.vendedorId) query.vendedor = parseId(filtros.vendedorId, 'vendedorId');
+
+        // Un cliente solo ve sus propias compras, filtre lo que filtre
+        if (actor?.rol === 'cliente') query.cliente = this.clienteDelActor(actor);
+
         return this.repository.findAll(query);
     }
 
-    async findOne(id: string) {
+    async findOne(id: string, actor?: Actor) {
         const venta = await this.repository.findOne({ _id: parseId(id) });
-        if (!venta) throw new NotFoundError('Venta no encontrada');
+        // A un cliente, una venta ajena se le informa como inexistente (no revela que existe)
+        if (!venta || (actor?.rol === 'cliente' && !venta.cliente._id.equals(this.clienteDelActor(actor)))) {
+            throw new NotFoundError('Venta no encontrada');
+        }
         return venta;
     }
 
-    async create(input: Record<string, any>) {
+    async create(input: Record<string, any>, actor?: Actor) {
+        if (actor?.rol === 'cliente') {
+            // Pedido hecho por el cliente: siempre a su nombre, pendiente y sin vendedor asignado
+            const { estado, vendedorId, fechaDeVenta, fechaCancelacion, ...pedido } = input;
+            input = { ...pedido, clienteId: this.clienteDelActor(actor).toHexString(), estado: 'pendiente' };
+        }
         if (!input.clienteId) throw new BadRequestError('clienteId es obligatorio');
 
         const { data, items } = await this.resolverRelaciones(input);
@@ -61,6 +77,13 @@ export class VentaService {
     async remove(id: string) {
         const venta = await this.repository.delete({ _id: parseId(id) });
         if (!venta) throw new NotFoundError('Venta no encontrada');
+    }
+
+    /** clienteId del usuario cliente logueado (403 si su usuario no tiene ficha de cliente). */
+    private clienteDelActor(actor: NonNullable<Actor>) {
+        const id = toObjectId(actor.clienteId);
+        if (!id) throw new ForbiddenError('Tu usuario no tiene una ficha de cliente asociada');
+        return id;
     }
 
     /** Traduce los ids recibidos en referencias válidas; lanza 400 si algo no existe. */

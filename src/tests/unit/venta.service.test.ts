@@ -144,3 +144,28 @@ describe('VentaService.update', () => {
         await expect(service.update('abc', { estado: 'cancelada' })).rejects.toThrow('ID inválido');
     });
 });
+
+describe('VentaService - pedidos hechos por un cliente', () => {
+    const actorCliente = { rol: 'cliente' as const, clienteId: clienteId.toHexString() };
+
+    it('fuerza su clienteId, estado pendiente y sin vendedor, aunque mande otros datos', async () => {
+        const { service, guardadas } = crearServicio();
+        await service.create({
+            clienteId: new ObjectId().toHexString(), // intenta comprar a nombre de otro
+            vendedorId: vendedorId.toHexString(),
+            estado: 'concretada',
+            items: [{ productoId: tractorId.toHexString(), cantidad: 1 }],
+        }, actorCliente);
+
+        const { data } = guardadas[0];
+        expect(data.cliente.equals(clienteId)).toBe(true);
+        expect(data.estado).toBe('pendiente');
+        expect(data.vendedor).toBeUndefined();
+    });
+
+    it('rechaza el pedido si el usuario cliente no tiene ficha asociada', async () => {
+        const { service } = crearServicio();
+        await expect(service.create({ productoIds: [tractorId.toHexString()] }, { rol: 'cliente', clienteId: null }))
+            .rejects.toThrow('Tu usuario no tiene una ficha de cliente asociada');
+    });
+});

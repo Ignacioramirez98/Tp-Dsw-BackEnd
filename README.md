@@ -189,12 +189,21 @@ Módulos: Vendedores, Servicios, Localidades, Operarios
 
 ## Roles y Permisos
 
-| Rol          | Puede Hacer                                 |
-| ------------ | ------------------------------------------- |
-| **cliente**  | Ver/actualizar su perfil, ver productos     |
-| **vendedor** | Ver clientes, crear ventas, ver productos   |
-| **operario** | Ver y gestionar operarios                   |
-| **admin**    | Acceso total (crear, editar, eliminar todo) |
+Todas las rutas (salvo el login y el alta de cliente) requieren el header `Authorization: Bearer <token>`.
+"Propio" significa que ese rol solo accede a su propio registro; si pide otro, la API responde 403.
+
+| Recurso | admin | vendedor | operario | cliente |
+| --- | --- | --- | --- | --- |
+| Localidades | ABM | ver | ver | ver |
+| Productos | ABM | ver | ver | ver |
+| Servicios | ABM | ver | crear y editar | ver |
+| Clientes | ABM | ver, crear y editar | ver | ver y editar el propio |
+| Vendedores | ABM | ver; editar el propio | — | — |
+| Operarios | ABM | ver | ver; editar el propio | — |
+| Ventas | ABM | ver, crear y editar | — | ver las propias; crear un pedido propio |
+| Usuarios | ABM | — | — | — |
+
+Cuando un cliente crea una venta, la API la registra siempre a su nombre, en estado `pendiente` y sin vendedor, aunque envíe otros datos.
 
 ---
 
