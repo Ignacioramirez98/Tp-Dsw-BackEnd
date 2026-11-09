@@ -1,6 +1,11 @@
 import { MikroORM } from '@mikro-orm/core';
 import { MongoDriver } from '@mikro-orm/mongodb';
 import ormConfig from '../../../mikro-orm.config.js';
+import dns from 'node:dns';
+
+// Usa DNS públicos (Google y Cloudflare) para resolver la URL mongodb+srv de Atlas.
+// Evita el error "querySrv ECONNREFUSED" cuando el DNS de la red local rechaza consultas SRV.
+dns.setServers(['8.8.8.8', '1.1.1.1']);
 
 let orm: MikroORM<MongoDriver> | null = null;
 
