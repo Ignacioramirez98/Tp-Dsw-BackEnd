@@ -82,6 +82,7 @@ Usuarios de prueba que crea `--demo`:
 | `npm test` | Corre todos los tests (unitarios + integración) |
 | `npm run test:unit` | Solo tests unitarios (no necesitan base de datos) |
 | `npm run test:integration` | Solo el test de integración (levanta una base MongoDB en memoria) |
+| `npm run e2e:server` | API de prueba para los tests end-to-end del front: base MongoDB en memoria con datos fijos (`cliente` / `cliente123`) en el puerto 3000. No usa el `.env` ni toca la base real |
 | `npm run test:watch` | Tests en modo watch |
 | `npm run test:ui` | Interfaz visual de Vitest |
 | `npm run seed` | Crea el usuario admin (`-- --demo` para datos de ejemplo) |

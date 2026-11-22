@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "migrar:items-venta": "node dist/scripts/migrar-items-venta.js",
-    "seed": "tsc -p ./tsconfig.json && node ./dist/scripts/seed.js"
+    "seed": "tsc -p ./tsconfig.json && node ./dist/scripts/seed.js",
+    "e2e:server": "tsc -p ./tsconfig.json && node ./dist/scripts/e2e-server.js"
   },
   "keywords": [],
   "author": "",
