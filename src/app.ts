@@ -21,7 +21,7 @@ export function createApp(orm: MikroORM) {
   const app = express();
 
   app.use(cors({
-    origin: config.frontendUrl,
+    origin: config.frontendOrigins,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
   }));
 
