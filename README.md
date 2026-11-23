@@ -46,7 +46,7 @@ cp .env.example .env
 | `PORT` | Puerto del servidor (por defecto `3000`) |
 | `JWT_SECRET` | **Obligatorio.** Clave para firmar los tokens. Generar una con `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
 | `JWT_EXPIRES_IN` | Duración del token (ej. `1h`) |
-| `FRONTEND_URL` | URL del frontend habilitada en CORS (ej. `http://localhost:4200`) |
+| `FRONTEND_URL` | URL del frontend habilitada en CORS (ej. `http://localhost:4200`). En producción: la URL exacta del front desplegado, con `https://` y sin barra final. Admite varias separadas por coma |
 
 El servidor no arranca si falta `MONGO_URI` o `JWT_SECRET`.
 
