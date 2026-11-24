@@ -186,6 +186,18 @@ Authorization: Bearer <token>
 - `POST /ventas/:id/cancelar` - Cancelar la venta
 - `DELETE /ventas/:id` - Eliminar venta (solo pendientes o canceladas)
 
+### Usuarios (solo admin)
+
+- `POST /usuarios` - Crear usuario (`usuario`, `contraseña`, `rol` y, según el rol, `clienteId`, `vendedorId` u `operarioId`). Los admins no se crean por API
+- `GET /usuarios` y `GET /usuarios/:id` - Listar y ver (la contraseña nunca se devuelve)
+- `PATCH /usuarios/:id` - Editar `usuario`, `contraseña`, `activo`, `rol` y perfil vinculado. Cambiar el rol exige el perfil que le corresponde (por ejemplo `rol: "vendedor"` + `vendedorId`)
+- `PATCH /usuarios/:id/desactivar` y `PATCH /usuarios/:id/activar` - Bloquear o devolver el acceso (un usuario desactivado no puede iniciar sesión)
+- `DELETE /usuarios/:id` - Eliminar. Un usuario vinculado a un cliente, vendedor u operario **no se elimina** (409): se desactiva
+
+Reglas: un admin no puede desactivarse ni eliminarse a sí mismo, ni cambiar de rol. Cuando se elimina un cliente, vendedor u operario, su usuario queda desactivado y sin vínculo, así que después se puede eliminar. Un perfil solo puede tener un usuario (409 si ya tiene).
+
+Un token ya emitido sigue valiendo hasta que vence, aunque se desactive al usuario (el bloqueo se aplica al iniciar sesión).
+
 ### Solicitudes de servicio
 
 - `GET /solicitudes-servicio` - Listar, de la más nueva a la más vieja. Filtros: `estado` y rango `desde` / `hasta` (AAAA-MM-DD). Cada rol ve lo suyo (ver abajo)
@@ -272,7 +284,7 @@ Todas las rutas (salvo el login y el alta de cliente) requieren el header `Autho
 | Operarios | ABM | ver | ver; editar el propio | — |
 | Solicitudes de servicio | ver todas, aceptar, finalizar y cancelar | — | ver las de sus servicios y las sin responsable; aceptar, finalizar y cancelar | ver las propias; pedir un servicio y cancelar uno propio pendiente |
 | Ventas | ABM, concretar y cancelar | ver, crear, editar, concretar y cancelar | — | ver las propias; crear y cancelar un pedido propio pendiente |
-| Usuarios | ABM | — | — | — |
+| Usuarios | ABM, activar y desactivar (no a sí mismo) | — | — | — |
 
 Cuando un cliente crea una venta, la API la registra siempre a su nombre, en estado `pendiente` y sin vendedor, aunque envíe otros datos. El estado no se edita a mano: solo cambia con concretar y cancelar.
 

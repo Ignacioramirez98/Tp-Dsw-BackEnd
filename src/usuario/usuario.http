@@ -84,6 +84,42 @@ Authorization: Bearer {{loginAdmin.response.body.$.token}}
 
 ---
 
+### 8. Activar usuario (Admin)
+PATCH http://localhost:3000/usuarios/507f1f77bcf86cd799439011/activar
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+---
+
+### 9. Editar usuario: contraseña, nombre de usuario o estado (Admin)
+PATCH http://localhost:3000/usuarios/507f1f77bcf86cd799439011
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "contraseña": "NuevaClave123"
+}
+
+---
+
+### 10. Cambiar el rol: hay que indicar el perfil que le corresponde (Admin)
+PATCH http://localhost:3000/usuarios/507f1f77bcf86cd799439011
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "rol": "vendedor",
+  "vendedorId": "REEMPLAZAR_CON_ID_DE_VENDEDOR"
+}
+
+---
+
+### 11. Eliminar usuario (Admin)
+### Si está vinculado a un cliente, vendedor u operario responde 409: hay que desactivarlo
+DELETE http://localhost:3000/usuarios/507f1f77bcf86cd799439011
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+---
+
 ### ========================================
 ### FLUJO COMPLETO DE EJEMPLO
 ### ========================================
