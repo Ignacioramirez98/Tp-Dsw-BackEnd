@@ -1,5 +1,6 @@
 import { OperarioRepository } from './operario.repository.js';
 import { ServicioRepository } from '../servicio/servicio.repository.js';
+import { SolicitudServicioRepository } from '../solicitud-servicio/solicitud-servicio.repository.js';
 import { ConflictError, NotFoundError } from '../shared/errors.js';
 import { parseId } from '../shared/utils/object-id.js';
 
@@ -7,6 +8,7 @@ export class OperarioService {
     constructor(
         private readonly repository = new OperarioRepository(),
         private readonly servicioRepository = new ServicioRepository(),
+        private readonly solicitudRepository = new SolicitudServicioRepository(),
     ) {}
 
     findAll() {
@@ -33,6 +35,9 @@ export class OperarioService {
         const operarioId = parseId(id);
         if (await this.servicioRepository.count({ operario: operarioId })) {
             throw new ConflictError('No se puede eliminar el operario porque tiene servicios asignados');
+        }
+        if (await this.solicitudRepository.hasOperario(operarioId)) {
+            throw new ConflictError('No se puede eliminar el operario porque tiene solicitudes de servicio asignadas');
         }
         const operario = await this.repository.delete({ _id: operarioId });
         if (!operario) throw new NotFoundError('operario no encontrado');

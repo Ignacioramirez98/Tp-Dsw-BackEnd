@@ -22,6 +22,7 @@ import { Vendedor } from '../src/Vendedor/vendedor.entity.js';
 import { Operario } from '../src/operario/operario.entity.js';
 import { Producto } from '../src/producto/producto.entity.js';
 import { Servicio } from '../src/servicio/servicio.entity.js';
+import { SolicitudServicio } from '../src/solicitud-servicio/solicitud-servicio.entity.js';
 
 const demo = process.argv.includes('--demo');
 const creados: string[] = [];
@@ -74,8 +75,9 @@ async function cargarDemo(em: EntityManager) {
         { descripcion: 'Calibración de pulverizadora', importe_por_hora: 28000 },
         { descripcion: 'Reparación de transmisión', importe_por_hora: 42000 },
     ];
+    const serviciosCreados: Servicio[] = [];
     for (const servicio of servicios) {
-        await buscarOCrear(em, Servicio, { descripcion: servicio.descripcion }, { ...servicio, operario }, `servicio ${servicio.descripcion}`);
+        serviciosCreados.push(await buscarOCrear(em, Servicio, { descripcion: servicio.descripcion }, { ...servicio, operario }, `servicio ${servicio.descripcion}`));
     }
 
     const vendedor = await buscarOCrear(em, Vendedor, { dni: '28111222' }, {
@@ -86,6 +88,14 @@ async function cargarDemo(em: EntityManager) {
         nombre: 'Juan', apellido: 'Pérez', dni: '25111222', mail: 'juan.perez@campo.com', telefono: '3415551003',
         direccion: 'Ruta 33 km 12', razon_social: 'Establecimiento La Esperanza', localidad: rosario,
     }, 'cliente Juan Pérez');
+
+    // Una solicitud de servicio pendiente del cliente demo, para ver el panel del operario con datos
+    const [servicioTractor] = serviciosCreados;
+    await buscarOCrear(em, SolicitudServicio, { cliente, servicio: servicioTractor, observaciones: 'Solicitud de ejemplo (seed)' }, {
+        estado: 'pendiente', fechaSolicitud: new Date(), horasEstimadas: 4,
+        importePorHora: servicioTractor.importe_por_hora, importeEstimado: 4 * servicioTractor.importe_por_hora,
+        observaciones: 'Solicitud de ejemplo (seed)', cliente, servicio: servicioTractor, operario,
+    }, 'solicitud de servicio de ejemplo');
 
     // Un usuario por rol para probar la app (las contraseñas se documentan en el README)
     await crearUsuario(em, 'vendedor', 'vendedor123', 'vendedor', { vendedor });

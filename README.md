@@ -186,6 +186,29 @@ Authorization: Bearer <token>
 - `POST /ventas/:id/cancelar` - Cancelar la venta
 - `DELETE /ventas/:id` - Eliminar venta (solo pendientes o canceladas)
 
+### Solicitudes de servicio
+
+- `GET /solicitudes-servicio` - Listar, de la más nueva a la más vieja. Filtros: `estado` y rango `desde` / `hasta` (AAAA-MM-DD). Cada rol ve lo suyo (ver abajo)
+- `GET /solicitudes-servicio/:id` - Detalle (cliente, servicio y operario)
+- `POST /solicitudes-servicio` - **CUU Solicitar Servicio** (solo cliente): `servicioId`, `horasEstimadas`, `fechaPreferida` y `observaciones` opcionales
+- `POST /solicitudes-servicio/:id/aceptar` - Un operario (o el admin) se hace cargo
+- `POST /solicitudes-servicio/:id/finalizar` - Registra el trabajo hecho; `horasReales` opcional (por defecto las estimadas)
+- `POST /solicitudes-servicio/:id/cancelar` - Cancela; `motivo` opcional
+
+#### Ciclo de vida de una solicitud
+
+```
+pendiente ──aceptar──▶ aceptada ──finalizar──▶ finalizada
+    │                     │
+    └──────cancelar───────┴──▶ cancelada
+```
+
+- Nace siempre `pendiente`, a nombre del cliente de la sesión. Guarda el precio por hora del servicio al momento del pedido y calcula `importeEstimado`; al finalizar, `importeFinal = horasReales × importePorHora`.
+- El responsable es el operario del servicio. Si el servicio no tiene operario, cualquiera puede aceptarla y queda a su nombre; el admin puede indicar `operarioId`.
+- El operario ve las solicitudes de sus servicios y las que no tienen responsable; el cliente, solo las suyas (una ajena responde `404`).
+- El cliente cancela solo sus solicitudes `pendientes`; operario y admin también las `aceptadas`. Una transición no permitida responde `409`.
+- No se puede eliminar un cliente, servicio u operario que tenga solicitudes.
+
 #### Ciclo de vida de una venta
 
 ```
@@ -247,6 +270,7 @@ Todas las rutas (salvo el login y el alta de cliente) requieren el header `Autho
 | Clientes | ABM | ver, crear y editar | ver | ver y editar el propio |
 | Vendedores | ABM | ver; editar el propio | — | — |
 | Operarios | ABM | ver | ver; editar el propio | — |
+| Solicitudes de servicio | ver todas, aceptar, finalizar y cancelar | — | ver las de sus servicios y las sin responsable; aceptar, finalizar y cancelar | ver las propias; pedir un servicio y cancelar uno propio pendiente |
 | Ventas | ABM, concretar y cancelar | ver, crear, editar, concretar y cancelar | — | ver las propias; crear y cancelar un pedido propio pendiente |
 | Usuarios | ABM | — | — | — |
 

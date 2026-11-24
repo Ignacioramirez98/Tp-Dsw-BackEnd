@@ -358,3 +358,102 @@ describe('API - listado de ventas por rango de fecha', () => {
         expect(invertido.body.message).toBe('La fecha "desde" no puede ser posterior a "hasta"');
     });
 });
+
+describe('API - CUU Solicitar Servicio', () => {
+    const ids: Record<string, string> = {};
+    let tokenCli = '';
+    let tokenOtroCli = '';
+    let tokenOp = '';
+    let tokenOtroOp = '';
+
+    beforeAll(async () => {
+        const crearCliente = (dni: string, nombre: string) => request(app).post('/clientes').send({
+            nombre, apellido: 'Solic', dni, mail: `${nombre}@mail.com`, telefono: '3415550000', direccion: 'Calle 1',
+        });
+        const crearOperario = (dni: string, nombre: string) => request(app).post('/operarios').set(auth(tokenAdmin)).send({
+            nombre, apellido: 'Op', mail: `${nombre}@mail.com`, dni, telefono: '3415551111',
+        });
+        const usuario = async (nombre: string, rol: string, perfil: Record<string, string>) => {
+            await request(app).post('/usuarios').set(auth(tokenAdmin)).send({ usuario: nombre, contraseña: `${nombre}123`, rol, ...perfil });
+            return (await request(app).post('/usuarios/login').send({ usuario: nombre, contraseña: `${nombre}123` })).body.token as string;
+        };
+
+        ids.cli = (await crearCliente('32000001', 'solcli')).body.data.id;
+        ids.otroCli = (await crearCliente('32000002', 'solotro')).body.data.id;
+        ids.op = (await crearOperario('33000001', 'solop')).body.data.id;
+        ids.otroOp = (await crearOperario('33000002', 'solotroop')).body.data.id;
+
+        ids.servicio = (await request(app).post('/servicios').set(auth(tokenAdmin))
+            .send({ descripcion: 'Riego', importe_por_hora: 1000, operarioId: ids.op })).body.data.id;
+        ids.servicioLibre = (await request(app).post('/servicios').set(auth(tokenAdmin))
+            .send({ descripcion: 'Poda', importe_por_hora: 500 })).body.data.id;
+
+        tokenCli = await usuario('solcli', 'cliente', { clienteId: ids.cli });
+        tokenOtroCli = await usuario('solotro', 'cliente', { clienteId: ids.otroCli });
+        tokenOp = await usuario('solop', 'operario', { operarioId: ids.op });
+        tokenOtroOp = await usuario('solotroop', 'operario', { operarioId: ids.otroOp });
+    });
+
+    it('el cliente pide un servicio: nace pendiente, a su nombre y con el importe estimado', async () => {
+        const res = await request(app).post('/solicitudes-servicio').set(auth(tokenCli))
+            .send({ servicioId: ids.servicio, horasEstimadas: 3, observaciones: 'Lote norte', estado: 'finalizada' });
+
+        expect(res.status).toBe(201);
+        expect(res.body.data).toMatchObject({ estado: 'pendiente', importePorHora: 1000, importeEstimado: 3000, observaciones: 'Lote norte' });
+        expect(res.body.data.operario).toMatchObject({ nombre: 'solop' });
+        ids.solicitud = res.body.data.id;
+    });
+
+    it('valida los datos y los permisos del alta', async () => {
+        const invalida = await request(app).post('/solicitudes-servicio').set(auth(tokenCli)).send({ servicioId: ids.servicio, horasEstimadas: 0 });
+        expect(invalida.status).toBe(400);
+        expect((await request(app).post('/solicitudes-servicio').set(auth(tokenOp)).send({ servicioId: ids.servicio, horasEstimadas: 1 })).status).toBe(403);
+        expect((await request(app).get('/solicitudes-servicio')).status).toBe(401);
+    });
+
+    it('cada rol ve solo lo suyo', async () => {
+        const libre = await request(app).post('/solicitudes-servicio').set(auth(tokenOtroCli)).send({ servicioId: ids.servicioLibre, horasEstimadas: 2 });
+        ids.libre = libre.body.data.id;
+
+        const delCliente = await request(app).get('/solicitudes-servicio').set(auth(tokenCli));
+        expect(delCliente.body.data.map((s: any) => s.id)).toEqual([ids.solicitud]);
+        expect((await request(app).get(`/solicitudes-servicio/${ids.libre}`).set(auth(tokenCli))).status).toBe(404);
+
+        // El operario ve la de su servicio y la que no tiene responsable; el otro operario, solo la libre
+        const delOperario = await request(app).get('/solicitudes-servicio').set(auth(tokenOp));
+        expect(delOperario.body.data.map((s: any) => s.id).sort()).toEqual([ids.solicitud, ids.libre].sort());
+        const delOtro = await request(app).get('/solicitudes-servicio').set(auth(tokenOtroOp));
+        expect(delOtro.body.data.map((s: any) => s.id)).toEqual([ids.libre]);
+        expect((await request(app).get(`/solicitudes-servicio/${ids.solicitud}`).set(auth(tokenOtroOp))).status).toBe(404);
+
+        expect((await request(app).get('/solicitudes-servicio').set(auth(tokenAdmin))).body.data.length).toBeGreaterThanOrEqual(2);
+        const filtrada = await request(app).get('/solicitudes-servicio?estado=aceptada').set(auth(tokenAdmin));
+        expect(filtrada.body.data).toHaveLength(0);
+    });
+
+    it('el operario acepta y finaliza; el importe final sale de las horas reales', async () => {
+        const aceptada = await request(app).post(`/solicitudes-servicio/${ids.solicitud}/aceptar`).set(auth(tokenOp));
+        expect(aceptada.status).toBe(200);
+        expect(aceptada.body.data.estado).toBe('aceptada');
+
+        expect((await request(app).post(`/solicitudes-servicio/${ids.solicitud}/aceptar`).set(auth(tokenOp))).status).toBe(409);
+        // Ya aceptada: el cliente no puede cancelarla
+        expect((await request(app).post(`/solicitudes-servicio/${ids.solicitud}/cancelar`).set(auth(tokenCli))).status).toBe(409);
+
+        const finalizada = await request(app).post(`/solicitudes-servicio/${ids.solicitud}/finalizar`).set(auth(tokenOp)).send({ horasReales: 4 });
+        expect(finalizada.status).toBe(200);
+        expect(finalizada.body.data).toMatchObject({ estado: 'finalizada', horasReales: 4, importeFinal: 4000 });
+    });
+
+    it('el cliente cancela su pedido pendiente y las ajenas no se tocan', async () => {
+        expect((await request(app).post(`/solicitudes-servicio/${ids.libre}/cancelar`).set(auth(tokenCli))).status).toBe(404);
+        const res = await request(app).post(`/solicitudes-servicio/${ids.libre}/cancelar`).set(auth(tokenOtroCli)).send({ motivo: 'Ya no hace falta' });
+        expect(res.status).toBe(200);
+        expect(res.body.data).toMatchObject({ estado: 'cancelada', motivoCancelacion: 'Ya no hace falta' });
+    });
+
+    it('un servicio o un cliente con solicitudes no se pueden borrar', async () => {
+        expect((await request(app).delete(`/servicios/${ids.servicio}`).set(auth(tokenAdmin))).status).toBe(409);
+        expect((await request(app).delete(`/clientes/${ids.cli}`).set(auth(tokenAdmin))).status).toBe(409);
+    });
+});

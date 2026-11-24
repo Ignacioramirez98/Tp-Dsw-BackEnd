@@ -11,7 +11,9 @@
  *
  * Datos que carga (los espera front/e2e):
  *   cliente  / cliente123  (rol cliente, vinculado a una ficha de cliente)
+ *   operario / operario123 (rol operario, responsable del servicio "Service general de tractor")
  *   Tractor 120 HP ($45.000.000, stock 3) y Rastra de discos 28 ($7.900.000, stock 5)
+ *   Servicio "Service general de tractor" ($35.000 por hora)
  */
 import 'reflect-metadata';
 import bcrypt from 'bcryptjs';
@@ -41,6 +43,8 @@ async function main() {
     const { Localidad } = await import('../src/localidad/localidad.entity.js');
     const { Cliente } = await import('../src/cliente/cliente.entity.js');
     const { Producto } = await import('../src/producto/producto.entity.js');
+    const { Operario } = await import('../src/operario/operario.entity.js');
+    const { Servicio } = await import('../src/servicio/servicio.entity.js');
 
     const orm = await initializeORM();
     await orm.getSchemaGenerator().clearDatabase();
@@ -62,6 +66,13 @@ async function main() {
         nombre: 'Rastra de discos 28', descripcion: 'Rastra de tiro excéntrico para labranza',
         importe_compra: 6200000, importe_venta: 7900000, stock: 5,
     } as any);
+    const operario = em.create(Operario, {
+        nombre: 'Carlos', apellido: 'Benítez', mail: 'carlos.benitez@agrocrm.com', dni: '30111222', telefono: '3415551001',
+    } as any);
+    em.create(Usuario, {
+        usuario: 'operario', contraseña: await bcrypt.hash('operario123', 4), rol: 'operario', activo: true, operario,
+    } as any);
+    em.create(Servicio, { descripcion: 'Service general de tractor', importe_por_hora: 35000, operario } as any);
     await em.flush();
 
     const servidor = createApp(orm).listen(puerto, () => {
