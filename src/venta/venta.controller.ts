@@ -20,8 +20,8 @@ export async function findOne(req: Request, res: Response) {
 }
 
 export async function add(req: Request, res: Response) {
-    const data = await service.create(req.body.sanitizedInput, req.user);
-    res.status(201).json({ message: 'Venta creada', data });
+    const { venta, notificacion } = await service.create(req.body.sanitizedInput, req.user);
+    res.status(201).json({ message: 'Venta creada', data: venta, notificacion });
 }
 
 export async function update(req: Request, res: Response) {
@@ -35,11 +35,11 @@ export async function remove(req: Request, res: Response) {
 }
 
 export async function concretar(req: Request, res: Response) {
-    const data = await service.concretar(req.params.id, req.body.sanitizedInput, req.user);
-    res.json({ message: 'Venta concretada', data });
+    const { venta, notificacion } = await service.concretar(req.params.id, req.body.sanitizedInput, req.user);
+    res.json({ message: 'Venta concretada', data: venta, notificacion });
 }
 
 export async function cancelar(req: Request, res: Response) {
-    const data = await service.cancelar(req.params.id, req.user);
-    res.json({ message: 'Venta cancelada', data });
+    const { venta, notificacion } = await service.cancelar(req.params.id, req.user, req.body.sanitizedInput);
+    res.json({ message: 'Venta cancelada', data: venta, notificacion });
 }

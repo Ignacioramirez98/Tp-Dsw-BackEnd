@@ -4,3 +4,9 @@ process.env.MONGO_URI ??= 'mongodb://127.0.0.1:27017/crm-test';
 process.env.JWT_SECRET ??= 'secreto-de-test';
 process.env.JWT_EXPIRES_IN ??= '1h';
 process.env.NODE_ENV ??= 'test';
+
+// Nunca mandar mails reales desde los tests, aunque el .env tenga SMTP configurado
+// (dotenv no pisa variables que ya existen, aunque estén vacías).
+process.env.SMTP_HOST = '';
+process.env.SMTP_USER = '';
+process.env.SMTP_PASS = '';

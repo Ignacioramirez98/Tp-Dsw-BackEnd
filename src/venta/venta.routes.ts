@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { findAll, findOne, add, update, remove, concretar, cancelar } from './venta.controller.js';
 import { protectRoute, requireRole } from '../middleware/roleAuth.middleware.js';
 import { validateBody } from '../middleware/validate.middleware.js';
-import { concretarVentaSchema, createVentaSchema, updateVentaSchema } from '../validators/venta.validator.js';
+import { cancelarVentaSchema, concretarVentaSchema, createVentaSchema, updateVentaSchema } from '../validators/venta.validator.js';
 import { asyncHandler } from '../middleware/async-handler.js';
 
 export const ventaRouter = Router();
@@ -22,4 +22,4 @@ ventaRouter.delete('/:id', protectRoute, requireRole('admin'), asyncHandler(remo
 // CUU Concretar Venta: el vendedor confirma el pedido (descuenta stock y queda a su nombre).
 ventaRouter.post('/:id/concretar', protectRoute, requireRole('admin', 'vendedor'), validateBody(concretarVentaSchema), asyncHandler(concretar));
 // Cancelación: vendedor/admin cancelan pendientes o concretadas; el cliente, solo sus pedidos pendientes.
-ventaRouter.post('/:id/cancelar', protectRoute, requireRole('admin', 'vendedor', 'cliente'), asyncHandler(cancelar));
+ventaRouter.post('/:id/cancelar', protectRoute, requireRole('admin', 'vendedor', 'cliente'), validateBody(cancelarVentaSchema), asyncHandler(cancelar));

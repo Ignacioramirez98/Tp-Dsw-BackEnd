@@ -30,7 +30,13 @@ export const createVentaSchema = ventaBase
 
 export const updateVentaSchema = ventaBase.extend({ clienteId: objectId('clienteId').optional() });
 
+// Avisar al cliente por mail es opcional y por defecto sí
+const notificarCliente = z.boolean({ invalid_type_error: 'notificarCliente debe ser true o false' }).optional();
+
 export const concretarVentaSchema = z.object({
     vendedorId: objectIdOpcional('vendedorId'),
     fechaEntrega: fechaOpcional('fechaEntrega'),
+    notificarCliente,
 });
+
+export const cancelarVentaSchema = z.object({ notificarCliente });

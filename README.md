@@ -46,7 +46,8 @@ cp .env.example .env
 | `PORT` | Puerto del servidor (por defecto `3000`) |
 | `JWT_SECRET` | **Obligatorio.** Clave para firmar los tokens. Generar una con `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
 | `JWT_EXPIRES_IN` | Duración del token (ej. `1h`) |
-| `FRONTEND_URL` | URL del frontend habilitada en CORS (ej. `http://localhost:4200`). En producción: la URL exacta del front desplegado, con `https://` y sin barra final. Admite varias separadas por coma |
+| `FRONTEND_URL` | URL del frontend habilitada en CORS (ej. `http://localhost:4200`). En producción: la URL exacta del front desplegado, con `https://` y sin barra final. Admite varias separadas por coma. También se usa para el enlace "Ver mi pedido" de los mails |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | Opcionales. Servidor de correo para avisar al cliente por mail (ver [Avisos por mail](#avisos-por-mail)). Si faltan, la app funciona igual y no manda mails |
 
 El servidor no arranca si falta `MONGO_URI` o `JWT_SECRET`.
 
@@ -197,6 +198,36 @@ pendiente ──concretar──▶ concretada ──facturar──▶ facturada
 - **Cancelar**: vendedor o admin cancelan una venta pendiente o concretada; si estaba concretada, el stock vuelve. El cliente solo puede cancelar sus pedidos pendientes.
 - Una transición no permitida (ej. concretar una venta cancelada) responde `409`.
 
+#### Avisos por mail
+
+El cliente recibe un mail cuando:
+
+| Evento | Asunto |
+|---|---|
+| Envía un pedido desde el catálogo | Recibimos tu pedido |
+| Se concreta su venta | ¡Tu compra fue confirmada! (con productos, total, vendedor y fecha de entrega) |
+| Se cancela su venta | Tu pedido fue cancelado |
+
+- Concretar y cancelar aceptan `"notificarCliente": false` en el body para no mandar el mail (por defecto se manda).
+- Las respuestas de crear, concretar y cancelar incluyen `notificacion`, por ejemplo `{ "estado": "enviado", "para": "juan@campo.com" }`. Estados: `enviado`, `fallido` (el SMTP rechazó: la venta se guarda igual), `desactivado` (SMTP sin configurar), `sin_mail` (el cliente no tiene mail) y `omitido` (se pidió no avisar).
+- El mail se envía después de guardar: **si falla, la venta no se pierde**.
+
+**Configurar Gmail (gratis):**
+
+1. En la cuenta de Google que va a enviar los mails, activar la [verificación en 2 pasos](https://myaccount.google.com/signinoptions/twosv).
+2. Crear una [contraseña de aplicación](https://myaccount.google.com/apppasswords) (nombre: "Pauny CRM"). Google muestra 16 letras.
+3. En el `.env` (y en las variables de Vercel al desplegar):
+
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=la-cuenta@gmail.com
+SMTP_PASS=las 16 letras (con o sin espacios)
+MAIL_FROM=Pauny CRM <la-cuenta@gmail.com>
+```
+
+Gmail permite unos 500 mails por día. Cualquier otro proveedor SMTP sirve cambiando estas variables. Los tests y `npm run e2e:server` nunca mandan mails, aunque el `.env` tenga SMTP configurado.
+
 ### Y más...
 
 Módulos: Vendedores, Servicios, Localidades, Operarios
@@ -262,6 +293,7 @@ Si hay errores, verificar output del test
 - **JWT** - Autenticación
 - **bcryptjs** - Hashing seguro
 - **Zod** - Validación de esquemas
+- **Nodemailer** - Envío de mails por SMTP
 - **Vitest** - Testing
 - **CORS** - Control de acceso
 
