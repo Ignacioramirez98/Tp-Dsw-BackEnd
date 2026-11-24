@@ -138,6 +138,8 @@ describe('API - flujo de una venta', () => {
 
         expect(res.status).toBe(201);
         expect(res.body.data.estado).toBe('pendiente');
+        // Una venta cargada por el admin no avisa al crearla (se avisa al concretar)
+        expect(res.body.notificacion).toBeNull();
         expect(res.body.data.items[0]).toMatchObject({ cantidad: 2, precioUnitario: 10000, subtotal: 20000 });
         ids.venta = res.body.data.id;
     });
@@ -262,6 +264,8 @@ describe('API - CUU Concretar Venta', () => {
         expect(res.status).toBe(201);
         expect(res.body.data.estado).toBe('pendiente');
         expect(res.body.data.vendedor ?? null).toBeNull();
+        // Al cliente se le confirma que el pedido llegó (en los tests no hay SMTP: "desactivado")
+        expect(res.body.notificacion).toEqual({ estado: 'desactivado', para: 'pedro@mail.com' });
         ids.pedido = res.body.data.id;
         expect(await stock()).toBe(3);
     });
@@ -277,6 +281,8 @@ describe('API - CUU Concretar Venta', () => {
 
         expect(res.body.message).toBe('Venta concretada');
         expect(res.status).toBe(200);
+        // En los tests no hay SMTP: la venta se concreta igual e informa que el mail no salió
+        expect(res.body.notificacion).toEqual({ estado: 'desactivado', para: 'pedro@mail.com' });
         expect(res.body.data).toMatchObject({ estado: 'concretada', vendedor: { nombre: 'Laura' } });
         expect(res.body.data.fechaDeVenta).toEqual(expect.any(String));
         expect(res.body.data.fechaEntrega.slice(0, 10)).toBe(entrega);
@@ -315,7 +321,9 @@ describe('API - CUU Concretar Venta', () => {
     it('una venta concretada no se borra; al cancelarla el stock vuelve y recién ahí se puede borrar', async () => {
         expect((await request(app).delete(`/ventas/${ids.pedido}`).set(auth(tokenAdmin))).status).toBe(409);
 
-        const res = await request(app).post(`/ventas/${ids.pedido}/cancelar`).set(auth(tokenVendedor));
+        const res = await request(app).post(`/ventas/${ids.pedido}/cancelar`).set(auth(tokenVendedor))
+            .send({ notificarCliente: false });
+        expect(res.body.notificacion).toEqual({ estado: 'omitido' });
         expect(res.status).toBe(200);
         expect(res.body.data.fechaCancelacion).toEqual(expect.any(String));
         expect(await stock()).toBe(3);

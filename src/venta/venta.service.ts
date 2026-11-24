@@ -11,6 +11,7 @@ import type { Producto } from '../producto/producto.entity.js';
 import type { AuthUser } from '../middleware/roleAuth.middleware.js';
 import { parseId, toObjectId } from '../shared/utils/object-id.js';
 import { UN_DIA_MS, inicioDelDia, leerFecha } from '../shared/utils/fechas.js';
+import { NOTIFICACION_OMITIDA, VentaNotificador, type Notificacion } from './venta.notificador.js';
 
 export interface VentaFiltros {
     estado?: string;
@@ -28,6 +29,20 @@ export interface ConcretarInput {
     /** Solo para admin: el vendedor que concreta. Un vendedor concreta siempre a su nombre. */
     vendedorId?: string | null;
     fechaEntrega?: Date | null;
+    /** Si es false no se le manda el mail de confirmación al cliente (por defecto se manda). */
+    notificarCliente?: boolean;
+}
+
+export interface CancelarInput {
+    /** Si es false no se le avisa al cliente por mail (por defecto se avisa). */
+    notificarCliente?: boolean;
+}
+
+/** Resultado de una operación que puede avisarle al cliente por mail. */
+export interface ResultadoConAviso {
+    venta: Venta;
+    /** null cuando la operación no manda mail (ej. una venta cargada por el vendedor). */
+    notificacion: Notificacion | null;
 }
 
 // El estado y sus fechas no se editan a mano: cambian con concretar / cancelar / facturar
@@ -44,6 +59,7 @@ export class VentaService {
         private readonly vendedorRepository = new VendedorRepository(),
         private readonly productoRepository = new ProductoRepository(),
         private readonly servicioRepository = new ServicioRepository(),
+        private readonly notificador = new VentaNotificador(),
     ) {}
 
     findAll(filtros: VentaFiltros = {}, actor?: Actor) {
@@ -77,7 +93,7 @@ export class VentaService {
         return venta;
     }
 
-    async create(input: Record<string, any>, actor?: Actor) {
+    async create(input: Record<string, any>, actor?: Actor): Promise<ResultadoConAviso> {
         if (actor?.rol === 'cliente') {
             // Pedido hecho por el cliente: siempre a su nombre, pendiente y sin vendedor asignado
             const { vendedorId, ...pedido } = input;
@@ -91,7 +107,11 @@ export class VentaService {
         data.fechaContacto ??= new Date();
 
         const creada = await this.repository.addConItems(data, items ?? []);
-        return this.findOne(creada._id.toHexString());
+        const venta = await this.findOne(creada._id.toHexString());
+        // Al cliente que pidió desde el catálogo se le confirma que el pedido llegó.
+        // Una venta cargada por el vendedor se le avisa recién al concretarla.
+        const notificacion = actor?.rol === 'cliente' ? await this.notificador.pedidoRecibido(venta) : null;
+        return { venta, notificacion };
     }
 
     async update(id: string, input: Record<string, any>) {
@@ -124,7 +144,7 @@ export class VentaService {
      * Verifica que haya stock de todos los productos, lo descuenta, asigna el vendedor
      * y registra la fecha de venta. Si falta stock de algo, no cambia nada.
      */
-    async concretar(id: string, input: ConcretarInput = {}, actor?: Actor) {
+    async concretar(id: string, input: ConcretarInput = {}, actor?: Actor): Promise<ResultadoConAviso> {
         const venta = await this.ventaParaGestionar(id);
         this.exigirTransicion(venta, 'concretada');
 
@@ -160,14 +180,19 @@ export class VentaService {
             fechaDeVenta: hoy,
             ...(input.fechaEntrega !== undefined && { fechaEntrega: input.fechaEntrega }),
         });
-        return this.findOne(id);
+        // El mail sale después de guardar: si falla, la venta queda concretada igual
+        const concretada = await this.findOne(id);
+        const notificacion = input.notificarCliente === false
+            ? NOTIFICACION_OMITIDA
+            : await this.notificador.ventaConcretada(concretada);
+        return { venta: concretada, notificacion };
     }
 
     /**
      * Cancelación de la venta. Vendedor/admin pueden cancelar una venta pendiente o concretada
      * (si estaba concretada, el stock vuelve); el cliente solo puede cancelar sus pedidos pendientes.
      */
-    async cancelar(id: string, actor?: Actor) {
+    async cancelar(id: string, actor?: Actor, input: CancelarInput = {}): Promise<ResultadoConAviso> {
         const venta = await this.ventaParaGestionar(id);
 
         if (actor?.rol === 'cliente') {
@@ -185,7 +210,11 @@ export class VentaService {
         }
 
         await this.repository.guardarCambios(venta, { estado: 'cancelada', fechaCancelacion: new Date() });
-        return this.findOne(id, actor);
+        const cancelada = await this.findOne(id, actor);
+        const notificacion = input.notificarCliente === false
+            ? NOTIFICACION_OMITIDA
+            : await this.notificador.ventaCancelada(cancelada);
+        return { venta: cancelada, notificacion };
     }
 
     private async ventaParaGestionar(id: string) {

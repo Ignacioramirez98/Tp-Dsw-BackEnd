@@ -30,6 +30,10 @@ async function main() {
     process.env.NODE_ENV = 'test';
     process.env.PORT = String(puerto);
     process.env.FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:4200';
+    // Sin mails reales en las pruebas, aunque el .env tenga SMTP configurado
+    process.env.SMTP_HOST = '';
+    process.env.SMTP_USER = '';
+    process.env.SMTP_PASS = '';
 
     const { initializeORM, closeORM } = await import('../src/shared/db/conn.js');
     const { createApp } = await import('../src/app.js');
