@@ -1,6 +1,7 @@
 import { ClienteRepository } from './cliente.repository.js';
 import { LocalidadRepository } from '../localidad/localidad.repository.js';
 import { VentaRepository } from '../venta/venta.repository.js';
+import { SolicitudServicioRepository } from '../solicitud-servicio/solicitud-servicio.repository.js';
 import { BadRequestError, ConflictError, NotFoundError } from '../shared/errors.js';
 import { parseId, toObjectId } from '../shared/utils/object-id.js';
 
@@ -16,6 +17,7 @@ export class ClienteService {
         private readonly repository = new ClienteRepository(),
         private readonly localidadRepository = new LocalidadRepository(),
         private readonly ventaRepository = new VentaRepository(),
+        private readonly solicitudRepository = new SolicitudServicioRepository(),
     ) {}
 
     findAll(filtros: ClienteFiltros = {}) {
@@ -49,6 +51,9 @@ export class ClienteService {
         const clienteId = parseId(id);
         if (await this.ventaRepository.hasCliente(clienteId)) {
             throw new ConflictError('No se puede eliminar el cliente porque tiene ventas asociadas');
+        }
+        if (await this.solicitudRepository.hasCliente(clienteId)) {
+            throw new ConflictError('No se puede eliminar el cliente porque tiene solicitudes de servicio asociadas');
         }
         const cliente = await this.repository.delete({ _id: clienteId });
         if (!cliente) throw new NotFoundError('cliente no encontrado');

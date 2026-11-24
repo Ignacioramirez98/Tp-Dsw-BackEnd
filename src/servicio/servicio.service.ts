@@ -1,6 +1,7 @@
 import { ServicioRepository } from './servicio.repository.js';
 import { OperarioRepository } from '../operario/operario.repository.js';
 import { VentaRepository } from '../venta/venta.repository.js';
+import { SolicitudServicioRepository } from '../solicitud-servicio/solicitud-servicio.repository.js';
 import { BadRequestError, ConflictError, NotFoundError } from '../shared/errors.js';
 import { parseId, toObjectId } from '../shared/utils/object-id.js';
 
@@ -14,6 +15,7 @@ export class ServicioService {
         private readonly repository = new ServicioRepository(),
         private readonly operarioRepository = new OperarioRepository(),
         private readonly ventaRepository = new VentaRepository(),
+        private readonly solicitudRepository = new SolicitudServicioRepository(),
     ) {}
 
     findAll(filtros: ServicioFiltros = {}) {
@@ -44,6 +46,9 @@ export class ServicioService {
         await this.findOne(id);
         if (await this.ventaRepository.hasServicio(servicioId)) {
             throw new ConflictError('No se puede eliminar el servicio porque está asociado a una venta');
+        }
+        if (await this.solicitudRepository.hasServicio(servicioId)) {
+            throw new ConflictError('No se puede eliminar el servicio porque tiene solicitudes de clientes');
         }
         await this.repository.delete({ _id: servicioId });
     }
