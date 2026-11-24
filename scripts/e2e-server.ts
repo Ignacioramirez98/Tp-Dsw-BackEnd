@@ -10,6 +10,7 @@
  * Puerto: E2E_PORT (por defecto 3000, el que usa el front en environment.ts).
  *
  * Datos que carga (los espera front/e2e):
+ *   admin    / admin123    (rol admin, para el ABM de Usuarios)
  *   cliente  / cliente123  (rol cliente, vinculado a una ficha de cliente)
  *   operario / operario123 (rol operario, responsable del servicio "Service general de tractor")
  *   Tractor 120 HP ($45.000.000, stock 3) y Rastra de discos 28 ($7.900.000, stock 5)
@@ -71,6 +72,9 @@ async function main() {
     } as any);
     em.create(Usuario, {
         usuario: 'operario', contraseña: await bcrypt.hash('operario123', 4), rol: 'operario', activo: true, operario,
+    } as any);
+    em.create(Usuario, {
+        usuario: 'admin', contraseña: await bcrypt.hash('admin123', 4), rol: 'admin', activo: true,
     } as any);
     em.create(Servicio, { descripcion: 'Service general de tractor', importe_por_hora: 35000, operario } as any);
     await em.flush();
