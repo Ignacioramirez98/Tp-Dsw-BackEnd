@@ -457,3 +457,146 @@ describe('API - CUU Solicitar Servicio', () => {
         expect((await request(app).delete(`/clientes/${ids.cli}`).set(auth(tokenAdmin))).status).toBe(409);
     });
 });
+
+describe('API - ABM de Usuarios', () => {
+    const ids: Record<string, string> = {};
+    let tokenAdminUsuarios = '';
+
+    const crear = (usuario: string, extra: Record<string, unknown> = {}) =>
+        request(app).post('/usuarios').set(auth(tokenAdmin)).send({ usuario, contraseña: `${usuario}123`, rol: 'cliente', ...extra });
+    const login = (usuario: string, contraseña = `${usuario}123`) => request(app).post('/usuarios/login').send({ usuario, contraseña });
+
+    beforeAll(async () => {
+        const sesion = await login(admin.usuario, admin.contraseña);
+        tokenAdminUsuarios = sesion.body.token;
+        ids.admin = sesion.body.data.usuarioId;
+
+        const cliente = await request(app).post('/clientes').send({
+            nombre: 'Abm', apellido: 'Cliente', dni: '35000001', mail: 'abmcli@mail.com', telefono: '3415550001', direccion: 'Calle 1',
+        });
+        ids.cliente = cliente.body.data.id;
+        ids.operario = (await request(app).post('/operarios').set(auth(tokenAdmin)).send({
+            nombre: 'Abm', apellido: 'Operario', mail: 'abmop@mail.com', dni: '35000002', telefono: '3415550002',
+        })).body.data.id;
+        ids.vendedor = (await request(app).post('/vendedores').set(auth(tokenAdmin)).send({
+            nombre: 'Abm', apellido: 'Vendedor', mail: 'abmven@mail.com', dni: '35000003', telefono: '3415550003',
+        })).body.data.id;
+    });
+
+    it('alta, listado y detalle sin exponer la contraseña', async () => {
+        const alta = await crear('abm_suelto', { clienteId: ids.cliente });
+        expect(alta.status).toBe(201);
+        ids.suelto = alta.body.data.usuarioId;
+
+        const lista = await request(app).get('/usuarios').set(auth(tokenAdmin));
+        expect(lista.status).toBe(200);
+        expect(lista.body.data.map((u: any) => u.usuario)).toContain('abm_suelto');
+        expect(JSON.stringify(lista.body)).not.toContain('contraseña');
+
+        const detalle = await request(app).get(`/usuarios/${ids.suelto}`).set(auth(tokenAdmin));
+        expect(detalle.body.data).toMatchObject({ usuario: 'abm_suelto', rol: 'cliente', activo: true, clienteId: ids.cliente });
+    });
+
+    it('solo el admin gestiona usuarios', async () => {
+        expect((await request(app).get('/usuarios').set(auth(tokenCliente))).status).toBe(403);
+        expect((await request(app).patch(`/usuarios/${ids.suelto}`).set(auth(tokenCliente)).send({ activo: false })).status).toBe(403);
+        expect((await request(app).patch(`/usuarios/${ids.suelto}/activar`).set(auth(tokenCliente))).status).toBe(403);
+        expect((await request(app).delete(`/usuarios/${ids.suelto}`).set(auth(tokenCliente))).status).toBe(403);
+        expect((await request(app).delete(`/usuarios/${ids.suelto}`)).status).toBe(401);
+    });
+
+    it('cambia la contraseña: la anterior deja de servir', async () => {
+        const res = await request(app).patch(`/usuarios/${ids.suelto}`).set(auth(tokenAdmin)).send({ contraseña: 'nueva-clave-1' });
+        expect(res.status).toBe(200);
+        expect(res.body.data).not.toHaveProperty('contraseña');
+
+        expect((await login('abm_suelto')).status).toBe(401);
+        expect((await login('abm_suelto', 'nueva-clave-1')).status).toBe(200);
+    });
+
+    it('valida los datos de la edición', async () => {
+        const editar = (body: Record<string, unknown>) => request(app).patch(`/usuarios/${ids.suelto}`).set(auth(tokenAdmin)).send(body);
+
+        expect((await editar({})).status).toBe(400);
+        expect((await editar({ contraseña: '123' })).status).toBe(400);
+        expect((await editar({ rol: 'admin', clienteId: ids.cliente })).status).toBe(400);
+        expect((await editar({ usuario: admin.usuario })).status).toBe(409);
+        expect((await request(app).patch(`/usuarios/${'a'.repeat(24)}`).set(auth(tokenAdmin)).send({ activo: true })).status).toBe(404);
+    });
+
+    it('desactiva (ya no puede entrar) y vuelve a activar', async () => {
+        const baja = await request(app).patch(`/usuarios/${ids.suelto}/desactivar`).set(auth(tokenAdmin));
+        expect(baja.status).toBe(200);
+        expect((await login('abm_suelto', 'nueva-clave-1')).status).toBe(403);
+
+        const alta = await request(app).patch(`/usuarios/${ids.suelto}/activar`).set(auth(tokenAdmin));
+        expect(alta.status).toBe(200);
+        expect(alta.body.data.activo).toBe(true);
+        expect((await login('abm_suelto', 'nueva-clave-1')).status).toBe(200);
+    });
+
+    it('un admin no puede desactivarse ni eliminarse a sí mismo', async () => {
+        expect((await request(app).patch(`/usuarios/${ids.admin}/desactivar`).set(auth(tokenAdminUsuarios))).status).toBe(403);
+        expect((await request(app).patch(`/usuarios/${ids.admin}`).set(auth(tokenAdminUsuarios)).send({ activo: false })).status).toBe(403);
+        expect((await request(app).delete(`/usuarios/${ids.admin}`).set(auth(tokenAdminUsuarios))).status).toBe(403);
+        expect((await login(admin.usuario, admin.contraseña)).status).toBe(200);
+    });
+
+    it('cambia el rol indicando el perfil que le corresponde', async () => {
+        const sinPerfil = await request(app).patch(`/usuarios/${ids.suelto}`).set(auth(tokenAdmin)).send({ rol: 'vendedor' });
+        expect(sinPerfil.status).toBe(400);
+
+        const res = await request(app).patch(`/usuarios/${ids.suelto}`).set(auth(tokenAdmin)).send({ rol: 'vendedor', vendedorId: ids.vendedor });
+        expect(res.status).toBe(200);
+        expect(res.body.data).toMatchObject({ rol: 'vendedor', vendedorId: ids.vendedor, clienteId: null });
+
+        const sesion = await login('abm_suelto', 'nueva-clave-1');
+        expect(sesion.body.data).toMatchObject({ rol: 'vendedor', vendedorId: ids.vendedor });
+
+        // Ese vendedor ya tiene usuario
+        const otro = await crear('abm_otro', { rol: 'operario' });
+        const repetido = await request(app).patch(`/usuarios/${otro.body.data.usuarioId}`).set(auth(tokenAdmin)).send({ rol: 'vendedor', vendedorId: ids.vendedor });
+        expect(repetido.status).toBe(409);
+        ids.otro = otro.body.data.usuarioId;
+    });
+
+    it('un usuario vinculado a un perfil no se elimina: se desactiva', async () => {
+        const res = await request(app).delete(`/usuarios/${ids.suelto}`).set(auth(tokenAdmin));
+        expect(res.status).toBe(409);
+        expect((await request(app).get(`/usuarios/${ids.suelto}`).set(auth(tokenAdmin))).status).toBe(200);
+    });
+
+    it('uno sin perfil sí se elimina', async () => {
+        const res = await request(app).delete(`/usuarios/${ids.otro}`).set(auth(tokenAdmin));
+        expect(res.status).toBe(200);
+        expect((await request(app).get(`/usuarios/${ids.otro}`).set(auth(tokenAdmin))).status).toBe(404);
+        expect((await request(app).delete(`/usuarios/${ids.otro}`).set(auth(tokenAdmin))).status).toBe(404);
+    });
+
+    it('al eliminar su cliente, operario o vendedor el usuario queda desactivado y sin vínculo', async () => {
+        const conCliente = await crear('abm_cli', { clienteId: ids.cliente });
+        const conOperario = await crear('abm_op', { rol: 'operario', operarioId: ids.operario });
+        expect(conCliente.status).toBe(201);
+        expect(conOperario.status).toBe(201);
+
+        expect((await request(app).delete(`/clientes/${ids.cliente}`).set(auth(tokenAdmin))).status).toBe(200);
+        expect((await request(app).delete(`/operarios/${ids.operario}`).set(auth(tokenAdmin))).status).toBe(200);
+
+        expect((await login('abm_cli')).status).toBe(403);
+        expect((await login('abm_op')).status).toBe(403);
+
+        const cli = await request(app).get(`/usuarios/${conCliente.body.data.usuarioId}`).set(auth(tokenAdmin));
+        expect(cli.body.data).toMatchObject({ activo: false, clienteId: null });
+
+        // Ya sin vínculo, se puede eliminar
+        expect((await request(app).delete(`/usuarios/${conCliente.body.data.usuarioId}`).set(auth(tokenAdmin))).status).toBe(200);
+        expect((await request(app).delete(`/usuarios/${conOperario.body.data.usuarioId}`).set(auth(tokenAdmin))).status).toBe(200);
+    });
+
+    it('al eliminar su vendedor, su usuario también queda desactivado', async () => {
+        expect((await request(app).delete(`/vendedores/${ids.vendedor}`).set(auth(tokenAdmin))).status).toBe(200);
+        expect((await login('abm_suelto', 'nueva-clave-1')).status).toBe(403);
+        const res = await request(app).get(`/usuarios/${ids.suelto}`).set(auth(tokenAdmin));
+        expect(res.body.data).toMatchObject({ activo: false, vendedorId: null });
+    });
+});

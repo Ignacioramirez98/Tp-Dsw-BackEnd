@@ -1,6 +1,7 @@
 import { OperarioRepository } from './operario.repository.js';
 import { ServicioRepository } from '../servicio/servicio.repository.js';
 import { SolicitudServicioRepository } from '../solicitud-servicio/solicitud-servicio.repository.js';
+import { UsuarioRepository } from '../usuario/usuario.repository.js';
 import { ConflictError, NotFoundError } from '../shared/errors.js';
 import { parseId } from '../shared/utils/object-id.js';
 
@@ -9,6 +10,7 @@ export class OperarioService {
         private readonly repository = new OperarioRepository(),
         private readonly servicioRepository = new ServicioRepository(),
         private readonly solicitudRepository = new SolicitudServicioRepository(),
+        private readonly usuarioRepository = new UsuarioRepository(),
     ) {}
 
     findAll() {
@@ -41,5 +43,7 @@ export class OperarioService {
         }
         const operario = await this.repository.delete({ _id: operarioId });
         if (!operario) throw new NotFoundError('operario no encontrado');
+        // Sin perfil, su usuario ya no puede entrar
+        await this.usuarioRepository.desactivarYDesvincular('operario', operarioId);
     }
 }

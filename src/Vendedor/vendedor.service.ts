@@ -1,5 +1,6 @@
 import { VendedorRepository } from './vendedor.repository.js';
 import { VentaRepository } from '../venta/venta.repository.js';
+import { UsuarioRepository } from '../usuario/usuario.repository.js';
 import { ConflictError, NotFoundError } from '../shared/errors.js';
 import { parseId } from '../shared/utils/object-id.js';
 
@@ -7,6 +8,7 @@ export class VendedorService {
     constructor(
         private readonly repository = new VendedorRepository(),
         private readonly ventaRepository = new VentaRepository(),
+        private readonly usuarioRepository = new UsuarioRepository(),
     ) {}
 
     findAll() {
@@ -36,5 +38,7 @@ export class VendedorService {
         }
         const vendedor = await this.repository.delete({ _id: vendedorId });
         if (!vendedor) throw new NotFoundError('vendedor no encontrado');
+        // Sin perfil, su usuario ya no puede entrar
+        await this.usuarioRepository.desactivarYDesvincular('vendedor', vendedorId);
     }
 }

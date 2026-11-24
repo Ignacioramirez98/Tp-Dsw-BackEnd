@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { login, crearUsuario, obtenerTodos, obtenerPorId, desactivarUsuario } from './usuario.controller.js';
+import { login, crearUsuario, obtenerTodos, obtenerPorId, actualizarUsuario, desactivarUsuario, activarUsuario, eliminarUsuario } from './usuario.controller.js';
 import { protectRoute, requireRole } from '../middleware/roleAuth.middleware.js';
 import { asyncHandler } from '../middleware/async-handler.js';
 
@@ -13,5 +13,8 @@ usuarioRouter.post('/', protectRoute, requireRole('admin'), asyncHandler(crearUs
 usuarioRouter.get('/', protectRoute, requireRole('admin'), asyncHandler(obtenerTodos));
 usuarioRouter.get('/:id', protectRoute, requireRole('admin'), asyncHandler(obtenerPorId));
 usuarioRouter.patch('/:id/desactivar', protectRoute, requireRole('admin'), asyncHandler(desactivarUsuario));
+usuarioRouter.patch('/:id/activar', protectRoute, requireRole('admin'), asyncHandler(activarUsuario));
+usuarioRouter.patch('/:id', protectRoute, requireRole('admin'), asyncHandler(actualizarUsuario));
+usuarioRouter.delete('/:id', protectRoute, requireRole('admin'), asyncHandler(eliminarUsuario));
 
 export { usuarioRouter };

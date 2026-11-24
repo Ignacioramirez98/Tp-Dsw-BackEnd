@@ -2,6 +2,7 @@ import { ClienteRepository } from './cliente.repository.js';
 import { LocalidadRepository } from '../localidad/localidad.repository.js';
 import { VentaRepository } from '../venta/venta.repository.js';
 import { SolicitudServicioRepository } from '../solicitud-servicio/solicitud-servicio.repository.js';
+import { UsuarioRepository } from '../usuario/usuario.repository.js';
 import { BadRequestError, ConflictError, NotFoundError } from '../shared/errors.js';
 import { parseId, toObjectId } from '../shared/utils/object-id.js';
 
@@ -18,6 +19,7 @@ export class ClienteService {
         private readonly localidadRepository = new LocalidadRepository(),
         private readonly ventaRepository = new VentaRepository(),
         private readonly solicitudRepository = new SolicitudServicioRepository(),
+        private readonly usuarioRepository = new UsuarioRepository(),
     ) {}
 
     findAll(filtros: ClienteFiltros = {}) {
@@ -57,6 +59,8 @@ export class ClienteService {
         }
         const cliente = await this.repository.delete({ _id: clienteId });
         if (!cliente) throw new NotFoundError('cliente no encontrado');
+        // Sin ficha, su usuario ya no puede entrar
+        await this.usuarioRepository.desactivarYDesvincular('cliente', clienteId);
     }
 
     /** Convierte localidadId en la referencia a Localidad (null la quita). */

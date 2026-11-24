@@ -23,5 +23,19 @@ export const crearUsuarioSchema = z.object({
     operarioId: objectIdOpcional,
 });
 
+/** Datos editables de un usuario. Cambiar el rol exige indicar el perfil vinculado que le corresponde. */
+export const actualizarUsuarioSchema = z.object({
+    usuario: usuario.optional(),
+    contraseña: contraseña.optional(),
+    rol: z.enum(['cliente', 'vendedor', 'operario', 'admin'], { errorMap: () => ({ message: 'rol debe ser cliente, vendedor u operario' }) })
+        .refine((rol) => rol !== 'admin', 'Los admins no pueden crearse por API')
+        .optional(),
+    activo: z.boolean({ invalid_type_error: 'activo debe ser verdadero o falso' }).optional(),
+    clienteId: objectIdOpcional,
+    vendedorId: objectIdOpcional,
+    operarioId: objectIdOpcional,
+}).refine((datos) => Object.values(datos).some((valor) => valor !== undefined), 'No hay datos para actualizar');
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type CrearUsuarioInput = z.infer<typeof crearUsuarioSchema>;
+export type ActualizarUsuarioInput = z.infer<typeof actualizarUsuarioSchema>;
