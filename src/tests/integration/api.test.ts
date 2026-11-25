@@ -600,3 +600,155 @@ describe('API - ABM de Usuarios', () => {
         expect(res.body.data).toMatchObject({ activo: false, vendedorId: null });
     });
 });
+
+describe('API - CUU Realizar facturación', () => {
+    const ids: Record<string, string> = {};
+    let tokenVendedor = '';
+    let tokenCliente = '';
+    let tokenOtroCliente = '';
+
+    beforeAll(async () => {
+        ids.vendedor = (await request(app).post('/vendedores').set(auth(tokenAdmin)).send({
+            nombre: 'Marta', apellido: 'Ríos', mail: 'marta@mail.com', dni: '27111222', telefono: '3415556666',
+        })).body.data.id;
+        const nuevoCliente = (nombre: string, dni: string) => request(app).post('/clientes').send({
+            nombre, apellido: 'Facturado', dni, mail: `${nombre}@mail.com`, telefono: '3415557777', direccion: 'Calle 2', razon_social: `${nombre} SA`,
+        });
+        ids.cliente = (await nuevoCliente('Lucas', '33111222')).body.data.id;
+        ids.otro = (await nuevoCliente('Sofia', '33111333')).body.data.id;
+        ids.producto = (await request(app).post('/productos').set(auth(tokenAdmin))
+            .send({ nombre: 'Acoplado', descripcion: 'd', importe_compra: 1, importe_venta: 1000, stock: 20 })).body.data.id;
+
+        await request(app).post('/usuarios').set(auth(tokenAdmin))
+            .send({ usuario: 'marta', contraseña: 'marta123', rol: 'vendedor', vendedorId: ids.vendedor });
+        await request(app).post('/usuarios').set(auth(tokenAdmin))
+            .send({ usuario: 'lucas', contraseña: 'lucas123', rol: 'cliente', clienteId: ids.cliente });
+        await request(app).post('/usuarios').set(auth(tokenAdmin))
+            .send({ usuario: 'sofia', contraseña: 'sofia123', rol: 'cliente', clienteId: ids.otro });
+        const login = async (usuario: string, contraseña: string) =>
+            (await request(app).post('/usuarios/login').send({ usuario, contraseña })).body.token;
+        tokenVendedor = await login('marta', 'marta123');
+        tokenCliente = await login('lucas', 'lucas123');
+        tokenOtroCliente = await login('sofia', 'sofia123');
+    });
+
+    const pedido = async (token: string, cantidad = 2) =>
+        (await request(app).post('/ventas').set(auth(token)).send({ items: [{ productoId: ids.producto, cantidad }] })).body.data.id as string;
+    const concretar = (id: string) => request(app).post(`/ventas/${id}/concretar`).set(auth(tokenVendedor)).send({ notificarCliente: false });
+    const facturar = (id: string, token = tokenVendedor) => request(app).post(`/ventas/${id}/facturar`).set(auth(token));
+
+    it('no se factura una venta pendiente', async () => {
+        ids.venta = await pedido(tokenCliente);
+
+        const res = await facturar(ids.venta);
+        expect(res.status).toBe(409);
+        expect(res.body.message).toBe('No se puede facturar una venta pendiente');
+    });
+
+    it('el cliente no puede facturar y sin token no se accede', async () => {
+        await concretar(ids.venta);
+
+        expect((await facturar(ids.venta, tokenCliente)).status).toBe(403);
+        expect((await request(app).post(`/ventas/${ids.venta}/facturar`)).status).toBe(401);
+    });
+
+    it('el vendedor factura la venta concretada: comprobante con IVA y venta facturada', async () => {
+        const res = await facturar(ids.venta);
+
+        expect(res.status).toBe(201);
+        expect(res.body.message).toBe('Venta facturada');
+        expect(res.body.data).toMatchObject({
+            numero: expect.stringMatching(/^0001-\d{8}$/),
+            emitidaPor: 'marta',
+            venta: ids.venta,
+            cliente: ids.cliente,
+            subtotal: 2000, alicuotaIva: 21, iva: 420, total: 2420,
+            lineas: [{ descripcion: 'Acoplado', cantidad: 2, precioUnitario: 1000, importe: 2000 }],
+            receptor: { nombre: 'Lucas Facturado', dni: '33111222', razonSocial: 'Lucas SA' },
+        });
+        ids.factura = res.body.data.id;
+        ids.numero = res.body.data.numero;
+
+        expect((await request(app).get(`/ventas/${ids.venta}`).set(auth(tokenAdmin))).body.data.estado).toBe('facturada');
+    });
+
+    it('no se factura dos veces la misma venta', async () => {
+        const res = await facturar(ids.venta);
+        expect(res.status).toBe(409);
+        expect(res.body.message).toBe('La venta ya está facturada');
+    });
+
+    it('una venta facturada ya no se cancela ni se borra', async () => {
+        const cancelar = await request(app).post(`/ventas/${ids.venta}/cancelar`).set(auth(tokenVendedor));
+        expect(cancelar.status).toBe(409);
+        expect(cancelar.body.message).toBe('No se puede cancelar una venta facturada');
+
+        expect((await request(app).delete(`/ventas/${ids.venta}`).set(auth(tokenAdmin))).status).toBe(409);
+    });
+
+    it('la numeración es correlativa', async () => {
+        const otra = await pedido(tokenCliente, 1);
+        await concretar(otra);
+        const res = await facturar(otra);
+
+        expect(res.status).toBe(201);
+        expect(Number(res.body.data.numero.slice(-8))).toBe(Number(ids.numero.slice(-8)) + 1);
+    });
+
+    it('el cliente ve sus facturas y no las ajenas', async () => {
+        const propia = await request(app).get(`/facturas/${ids.factura}`).set(auth(tokenCliente));
+        expect(propia.status).toBe(200);
+        expect(propia.body.data.numero).toBe(ids.numero);
+
+        expect((await request(app).get(`/ventas/${ids.venta}/factura`).set(auth(tokenCliente))).body.data.id).toBe(ids.factura);
+
+        const lista = await request(app).get('/facturas').set(auth(tokenCliente));
+        expect(lista.status).toBe(200);
+        expect(lista.body.data).toHaveLength(2);
+        expect(lista.body.data.every((f: any) => f.cliente === ids.cliente)).toBe(true);
+
+        // Otro cliente: no ve la lista de Lucas y la factura le figura como inexistente
+        expect((await request(app).get('/facturas').set(auth(tokenOtroCliente))).body.data).toHaveLength(0);
+        expect((await request(app).get(`/facturas/${ids.factura}`).set(auth(tokenOtroCliente))).status).toBe(404);
+        expect((await request(app).get(`/ventas/${ids.venta}/factura`).set(auth(tokenOtroCliente))).status).toBe(404);
+    });
+
+    it('vendedor y admin ven todas; se filtra por cliente y por fecha', async () => {
+        const todas = await request(app).get('/facturas').set(auth(tokenVendedor));
+        expect(todas.status).toBe(200);
+        expect(todas.body.data.length).toBeGreaterThanOrEqual(2);
+
+        const deLucas = await request(app).get(`/facturas?clienteId=${ids.cliente}`).set(auth(tokenAdmin));
+        expect(deLucas.body.data).toHaveLength(2);
+        expect((await request(app).get(`/facturas?clienteId=${ids.otro}`).set(auth(tokenAdmin))).body.data).toHaveLength(0);
+
+        // "Hoy" como día de Argentina (el back lee AAAA-MM-DD en esa zona; con UTC, de noche daría el día siguiente)
+        const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' });
+        expect((await request(app).get(`/facturas?desde=${hoy}&hasta=${hoy}`).set(auth(tokenAdmin))).body.data.length).toBeGreaterThanOrEqual(2);
+        expect((await request(app).get('/facturas?desde=2020-01-01&hasta=2020-01-31').set(auth(tokenAdmin))).body.data).toHaveLength(0);
+        expect((await request(app).get('/facturas?desde=ayer').set(auth(tokenAdmin))).status).toBe(400);
+    });
+
+    it('la factura es un comprobante: no se edita ni se borra', async () => {
+        for (const metodo of ['put', 'patch', 'delete'] as const) {
+            expect((await request(app)[metodo](`/facturas/${ids.factura}`).set(auth(tokenAdmin))).status).toBe(404);
+        }
+    });
+
+    it('si dos personas facturan a la vez, solo una lo logra', async () => {
+        const id = await pedido(tokenCliente, 1);
+        await concretar(id);
+
+        const [a, b] = await Promise.all([facturar(id), facturar(id, tokenAdmin)]);
+
+        expect([a.status, b.status].sort()).toEqual([201, 409]);
+        expect((await request(app).get('/facturas').set(auth(tokenAdmin))).body.data.filter((f: any) => f.venta === id)).toHaveLength(1);
+    });
+
+    it('responde 404 si la venta no existe y 404 si todavía no tiene factura', async () => {
+        expect((await facturar('a'.repeat(24))).status).toBe(404);
+
+        const sinFactura = await pedido(tokenCliente, 1);
+        expect((await request(app).get(`/ventas/${sinFactura}/factura`).set(auth(tokenAdmin))).status).toBe(404);
+    });
+});

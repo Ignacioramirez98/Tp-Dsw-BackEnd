@@ -11,6 +11,7 @@ import { servicioRouter } from './servicio/servicio.routes.js';
 import { ventaRouter } from './venta/venta.routes.js';
 import { operarioRouter } from './operario/operario.routes.js';
 import { solicitudServicioRouter } from './solicitud-servicio/solicitud-servicio.routes.js';
+import { facturaRouter } from './factura/factura.routes.js';
 import { config } from './shared/config.js';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.js';
 
@@ -46,6 +47,7 @@ export function createApp(orm: MikroORM) {
   app.use('/ventas', ventaRouter);
   app.use('/operarios', operarioRouter);
   app.use('/solicitudes-servicio', solicitudServicioRouter);
+  app.use('/facturas', facturaRouter);
 
   // Rutas inexistentes y manejo centralizado de errores (siempre al final)
   app.use(notFoundHandler);

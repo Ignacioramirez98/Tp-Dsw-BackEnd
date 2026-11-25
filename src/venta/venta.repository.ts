@@ -49,7 +49,7 @@ export class VentaRepository extends BaseRepository<Venta> {
 
     /** Venta con sus ítems y productos cargados, lista para cambiar de estado y tocar el stock. */
     public async findParaGestionar(id: ObjectId): Promise<Venta | undefined> {
-        const venta = await this.em.findOne(Venta, { _id: id }, { populate: ['items', 'items.producto', 'cliente'] });
+        const venta = await this.em.findOne(Venta, { _id: id }, { populate: ['items', 'items.producto', 'cliente', 'cliente.localidad'] });
         return venta ?? undefined;
     }
 
