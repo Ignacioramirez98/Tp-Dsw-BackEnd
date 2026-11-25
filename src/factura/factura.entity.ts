@@ -1,4 +1,4 @@
-import { Entity, ManyToOne, PrimaryKey, Property } from '@mikro-orm/core';
+import { Entity, ManyToOne, PrimaryKey, Property, Unique } from '@mikro-orm/core';
 import { ObjectId } from 'mongodb';
 import { Cliente } from '../cliente/cliente.entity.js';
 import { Venta } from '../venta/venta.entity.js';
@@ -29,7 +29,9 @@ const comoId = (relacion: any) => String(relacion?._id ?? relacion);
  * Es un comprobante inmutable: guarda una copia de los datos del cliente y de los renglones,
  * así no cambia si después se modifica un producto, un precio o el cliente.
  */
+// Una venta se factura una sola vez (también garantizado por un índice único en la base)
 @Entity({ collection: 'facturas' })
+@Unique({ properties: ['venta'] })
 export class Factura {
     @PrimaryKey({ type: 'ObjectId' })
     _id!: ObjectId;

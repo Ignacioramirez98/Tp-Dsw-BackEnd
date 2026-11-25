@@ -47,6 +47,8 @@ cp .env.example .env
 | `JWT_SECRET` | **Obligatorio.** Clave para firmar los tokens. Generar una con `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
 | `JWT_EXPIRES_IN` | Duración del token (ej. `1h`) |
 | `FRONTEND_URL` | URL del frontend habilitada en CORS (ej. `http://localhost:4200`). En producción: la URL exacta del front desplegado, con `https://` y sin barra final. Admite varias separadas por coma. También se usa para el enlace "Ver mi pedido" de los mails |
+| `BLOB_READ_WRITE_TOKEN` | Solo en Vercel (la agrega Vercel al conectar un Blob store). Con ella, las imágenes se guardan en Vercel Blob; sin ella, en `public/uploads` |
+| `DNS_SERVERS` | Opcional. DNS para resolver la URL `mongodb+srv` de Atlas. Por defecto en desarrollo se usan `8.8.8.8,1.1.1.1` (evita `querySrv ECONNREFUSED` en algunas redes); `sistema` usa los DNS de la red. En Vercel no hace falta |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | Opcionales. Servidor de correo para avisar al cliente por mail (ver [Avisos por mail](#avisos-por-mail)). Si faltan, la app funciona igual y no manda mails |
 
 El servidor no arranca si falta `MONGO_URI` o `JWT_SECRET`.
@@ -313,6 +315,29 @@ Todas las rutas (salvo el login y el alta de cliente) requieren el header `Autho
 Cuando un cliente crea una venta, la API la registra siempre a su nombre, en estado `pendiente` y sin vendedor, aunque envíe otros datos. El estado no se edita a mano: solo cambia con concretar, cancelar y facturar.
 
 ---
+
+## Deploy en Vercel
+
+La API corre en Vercel como función serverless: `api/index.js` usa el código compilado por `npm run build` (`dist/`) y abre la conexión a MongoDB una sola vez por instancia. `vercel.json` manda todas las rutas a esa función y sirve `public/` como archivos estáticos.
+
+1. **Base de datos:** cluster de MongoDB Atlas con un usuario de lectura/escritura y `0.0.0.0/0` en *Network Access* (Vercel no tiene IP fija). Cargar datos con `npm run seed -- --demo` apuntando el `.env` a esa base: además de los datos, el seed crea los índices únicos.
+2. **Proyecto en Vercel:** importar el repo, Framework Preset *Other*, Root Directory `./`. El build (`npm run build`) y la salida los define `vercel.json`.
+3. **Variables de entorno** del proyecto:
+
+| Variable | Valor |
+|---|---|
+| `MONGO_URI` | Cadena `mongodb+srv://...` de Atlas |
+| `MONGO_DB_NAME` | `crm` |
+| `JWT_SECRET` | Clave larga y aleatoria, distinta de la de desarrollo |
+| `JWT_EXPIRES_IN` | Ej. `8h` |
+| `NODE_ENV` | `production` |
+| `FRONTEND_URL` | URL del front desplegado, sin barra final (ej. `https://pauny-crm.vercel.app`) |
+| `SMTP_*`, `MAIL_FROM` | Los de [Avisos por mail](#avisos-por-mail) |
+| `BLOB_READ_WRITE_TOKEN` | Se agrega sola al crear un Blob store (*Storage → Blob*) y conectarlo al proyecto |
+
+4. Después de agregar o cambiar variables, hacer *Redeploy*. Los errores se ven en la pestaña **Logs** del proyecto.
+
+Comprobación rápida: `GET /productos` sin token tiene que responder `401` con `{"message":"Token no proporcionado"}` (la API está viva y conectada).
 
 ## Solución de Problemas
 

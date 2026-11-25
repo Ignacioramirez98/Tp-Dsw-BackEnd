@@ -5,9 +5,10 @@ import { queryString } from '../shared/utils/query.js';
 const service = new ProductoService();
 
 /** Agrega la URL de la imagen subida (si hay) a los datos recibidos. */
-function conImagen(req: Request) {
+function conImagen(req: Request, res: Response) {
     const input = { ...req.body.sanitizedInput };
-    if (req.file) input.imagenUrl = `/uploads/${req.file.filename}`;
+    // La URL la deja el middleware de subida: /uploads/... en desarrollo o la de Vercel Blob en producción
+    if (res.locals.imagenUrl) input.imagenUrl = res.locals.imagenUrl;
     return input;
 }
 
@@ -24,12 +25,12 @@ export async function findOne(req: Request, res: Response) {
 }
 
 export async function add(req: Request, res: Response) {
-    const data = await service.create(conImagen(req));
+    const data = await service.create(conImagen(req, res));
     res.status(201).json({ message: 'Producto creado', data });
 }
 
 export async function update(req: Request, res: Response) {
-    const data = await service.update(req.params.id, conImagen(req));
+    const data = await service.update(req.params.id, conImagen(req, res));
     res.json({ message: 'Producto actualizado exitosamente', data });
 }
 
