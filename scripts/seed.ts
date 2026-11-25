@@ -107,6 +107,11 @@ async function main() {
     const orm = await initializeORM();
     const em = orm.em.fork();
 
+    // Crea los índices únicos de las entidades (usuario, número de factura, una factura por venta).
+    // En una base nueva no existen hasta que alguien los crea; es seguro correrlo muchas veces.
+    await orm.getSchemaGenerator().ensureIndexes();
+    console.log('Índices de la base: creados o ya existentes');
+
     const adminUsuario = process.env.SEED_ADMIN_USUARIO || 'admin';
     const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'admin123';
     await crearUsuario(em, adminUsuario, adminPassword, 'admin');

@@ -3,9 +3,15 @@ import { MongoDriver } from '@mikro-orm/mongodb';
 import ormConfig from '../../../mikro-orm.config.js';
 import dns from 'node:dns';
 
-// Usa DNS públicos (Google y Cloudflare) para resolver la URL mongodb+srv de Atlas.
-// Evita el error "querySrv ECONNREFUSED" cuando el DNS de la red local rechaza consultas SRV.
-dns.setServers(['8.8.8.8', '1.1.1.1']);
+// Para resolver la URL mongodb+srv de Atlas en algunas redes locales hace falta usar DNS públicos
+// (evita el error "querySrv ECONNREFUSED" cuando el DNS de la red rechaza consultas SRV).
+// - DNS_SERVERS=8.8.8.8,1.1.1.1 en el .env elige los servidores; DNS_SERVERS=sistema usa los de la red.
+// - Sin la variable: en desarrollo se usan Google y Cloudflare; en Vercel, los DNS propios de Vercel.
+const dnsConfigurados = process.env.DNS_SERVERS?.trim();
+const servidoresDns = dnsConfigurados
+    ? (dnsConfigurados === 'sistema' ? [] : dnsConfigurados.split(',').map((s) => s.trim()).filter(Boolean))
+    : (process.env.VERCEL ? [] : ['8.8.8.8', '1.1.1.1']);
+if (servidoresDns.length) dns.setServers(servidoresDns);
 
 let orm: MikroORM<MongoDriver> | null = null;
 
