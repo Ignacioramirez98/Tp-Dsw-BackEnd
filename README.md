@@ -91,7 +91,7 @@ Usuarios de prueba que crea `--demo`:
 ### Tests
 
 - **Unitarios** (`src/tests/unit`): lógica de ventas, validaciones Zod, login y control de roles. Usan repositorios en memoria.
-- **Integración** (`src/tests/integration`): levanta la API completa con [supertest](https://github.com/ladjs/supertest) contra una base MongoDB de prueba (`crm_test`) y recorre el flujo login → alta de datos → venta → detalle, el CUU Concretar Venta (stock, estados y permisos) y el filtro por rango de fechas. Por defecto usa `mongodb-memory-server`, que **descarga MongoDB la primera vez** (puede tardar un par de minutos). Para usar otro servidor de prueba: `TEST_MONGO_URI=mongodb://... npm run test:integration`. Nunca usa la base real.
+- **Integración** (`src/tests/integration`): levanta la API completa con [supertest](https://github.com/ladjs/supertest) contra una base MongoDB de prueba (`crm_test`) y recorre el flujo login → alta de datos → venta → detalle, el CUU Concretar Venta (stock, estados y permisos), el CUU Realizar facturación (comprobante, numeración, doble facturación simultánea y permisos) y el filtro por rango de fechas. Por defecto usa `mongodb-memory-server`, que **descarga MongoDB la primera vez** (puede tardar un par de minutos). Para usar otro servidor de prueba: `TEST_MONGO_URI=mongodb://... npm run test:integration`. Nunca usa la base real.
 
 ---
 
@@ -108,6 +108,7 @@ src/
 ├── localidad/               # Módulo de Localidades
 ├── operario/                # Módulo de Operarios
 ├── venta/                   # Módulo de Ventas
+├── factura/                 # Facturación de ventas concretadas
 ├── middleware/
 │   └── roleAuth.middleware.ts # Autenticación y Control de Roles
 ├── validators/
@@ -184,7 +185,16 @@ Authorization: Bearer <token>
 - `PUT/PATCH /ventas/:id` - Actualizar venta (cliente, productos y servicios solo mientras está pendiente)
 - `POST /ventas/:id/concretar` - **CUU Concretar Venta** (ver abajo)
 - `POST /ventas/:id/cancelar` - Cancelar la venta
+- `POST /ventas/:id/facturar` - **CUU Realizar facturación** (ver abajo)
+- `GET /ventas/:id/factura` - La factura de la venta (`404` si todavía no se facturó)
 - `DELETE /ventas/:id` - Eliminar venta (solo pendientes o canceladas)
+
+### Facturas
+
+- `GET /facturas` - Listar, de la más nueva a la más vieja. Filtros: `clienteId` y rango de fecha de emisión `desde` / `hasta` (AAAA-MM-DD, ambos días incluidos). Admin y vendedor ven todas; el cliente, solo las suyas
+- `GET /facturas/:id` - Detalle del comprobante (una factura ajena responde `404` al cliente)
+
+Las facturas **no se crean, editan ni borran** por estos endpoints: se emiten con `POST /ventas/:id/facturar` y son inmutables.
 
 ### Usuarios (solo admin)
 
@@ -231,7 +241,20 @@ pendiente ──concretar──▶ concretada ──facturar──▶ facturada
 
 - **Concretar** (vendedor o admin): verifica que haya stock de todos los productos y lo descuenta, deja la venta a nombre del vendedor (el admin indica `vendedorId`) y registra la fecha de venta. Acepta `fechaEntrega` opcional (no anterior a hoy). Si falta stock responde `409` con el detalle (`Stock insuficiente: Tractor (pedido 2, disponible 1)`) y no cambia nada.
 - **Cancelar**: vendedor o admin cancelan una venta pendiente o concretada; si estaba concretada, el stock vuelve. El cliente solo puede cancelar sus pedidos pendientes.
+- **Facturar** (vendedor o admin): solo una venta `concretada`. Emite la factura y la venta pasa a `facturada`; desde ahí ya no se puede cancelar ni eliminar.
 - Una transición no permitida (ej. concretar una venta cancelada) responde `409`.
+
+#### Facturación
+
+La factura toma como entrada la venta concretada:
+
+- **Renglones**: uno por ítem de la venta, con el precio al que se vendió. Los precios de los productos se toman como **netos**: el IVA (21 %) se suma y se discrimina, así que `total = subtotal + iva` (redondeado a dos decimales).
+- **Servicios**: no se facturan desde la venta, porque se cotizan por hora (ver solicitudes de servicio). Una venta sin productos no se puede facturar (`409`).
+- **Comprobante inmutable**: guarda una copia de los datos del cliente (nombre, DNI, razón social, dirección, localidad y mail) y de los renglones, y quién la emitió (`emitidaPor`). Si después cambia un producto, un precio o el cliente, la factura no se altera.
+- **Numeración**: correlativa con punto de venta, `0001-00000001`, con un contador atómico en la base. Los números no se reutilizan.
+- **Una sola factura por venta**: facturar de nuevo responde `409` (`La venta ya está facturada`). Si dos personas facturan a la vez, solo una lo logra y la otra recibe `409`.
+- Una venta que no está `concretada` responde `409` (`No se puede facturar una venta pendiente`).
+- La anulación de facturas (nota de crédito) queda fuera de este alcance.
 
 #### Avisos por mail
 
@@ -283,10 +306,11 @@ Todas las rutas (salvo el login y el alta de cliente) requieren el header `Autho
 | Vendedores | ABM | ver; editar el propio | — | — |
 | Operarios | ABM | ver | ver; editar el propio | — |
 | Solicitudes de servicio | ver todas, aceptar, finalizar y cancelar | — | ver las de sus servicios y las sin responsable; aceptar, finalizar y cancelar | ver las propias; pedir un servicio y cancelar uno propio pendiente |
-| Ventas | ABM, concretar y cancelar | ver, crear, editar, concretar y cancelar | — | ver las propias; crear y cancelar un pedido propio pendiente |
+| Ventas | ABM, concretar, cancelar y facturar | ver, crear, editar, concretar, cancelar y facturar | — | ver las propias; crear y cancelar un pedido propio pendiente |
+| Facturas | ver todas | ver todas | — | ver las propias |
 | Usuarios | ABM, activar y desactivar (no a sí mismo) | — | — | — |
 
-Cuando un cliente crea una venta, la API la registra siempre a su nombre, en estado `pendiente` y sin vendedor, aunque envíe otros datos. El estado no se edita a mano: solo cambia con concretar y cancelar.
+Cuando un cliente crea una venta, la API la registra siempre a su nombre, en estado `pendiente` y sin vendedor, aunque envíe otros datos. El estado no se edita a mano: solo cambia con concretar, cancelar y facturar.
 
 ---
 

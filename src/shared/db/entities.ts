@@ -1,3 +1,4 @@
+import { Factura } from '../../factura/factura.entity.js';
 import { Cliente } from '../../cliente/cliente.entity.js';
 import { Localidad } from '../../localidad/localidad.entity.js';
 import { Operario } from '../../operario/operario.entity.js';
@@ -10,4 +11,4 @@ import { ItemVenta } from '../../venta/item-venta.entity.js';
 import { Venta } from '../../venta/venta.entity.js';
 
 // Lista explícita de entidades (en vez de buscarlas por glob en dist/)
-export const entities = [Cliente, Localidad, Operario, Producto, Servicio, Usuario, Vendedor, Venta, ItemVenta, SolicitudServicio];
+export const entities = [Cliente, Localidad, Operario, Producto, Servicio, Usuario, Vendedor, Venta, ItemVenta, SolicitudServicio, Factura];

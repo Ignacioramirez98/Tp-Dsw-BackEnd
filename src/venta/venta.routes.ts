@@ -3,6 +3,7 @@ import { findAll, findOne, add, update, remove, concretar, cancelar } from './ve
 import { protectRoute, requireRole } from '../middleware/roleAuth.middleware.js';
 import { validateBody } from '../middleware/validate.middleware.js';
 import { cancelarVentaSchema, concretarVentaSchema, createVentaSchema, updateVentaSchema } from '../validators/venta.validator.js';
+import { facturar, findByVenta as facturaDeLaVenta } from '../factura/factura.controller.js';
 import { asyncHandler } from '../middleware/async-handler.js';
 
 export const ventaRouter = Router();
@@ -23,3 +24,8 @@ ventaRouter.delete('/:id', protectRoute, requireRole('admin'), asyncHandler(remo
 ventaRouter.post('/:id/concretar', protectRoute, requireRole('admin', 'vendedor'), validateBody(concretarVentaSchema), asyncHandler(concretar));
 // Cancelación: vendedor/admin cancelan pendientes o concretadas; el cliente, solo sus pedidos pendientes.
 ventaRouter.post('/:id/cancelar', protectRoute, requireRole('admin', 'vendedor', 'cliente'), validateBody(cancelarVentaSchema), asyncHandler(cancelar));
+
+// CUU Realizar facturación: emite la factura de una venta concretada (la venta pasa a facturada).
+ventaRouter.post('/:id/facturar', protectRoute, requireRole('admin', 'vendedor'), asyncHandler(facturar));
+// La factura de la venta; el cliente solo accede a la de sus propias compras.
+ventaRouter.get('/:id/factura', protectRoute, requireRole('admin', 'vendedor', 'cliente'), asyncHandler(facturaDeLaVenta));

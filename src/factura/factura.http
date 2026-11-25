@@ -1,0 +1,41 @@
+### ========================================
+### FACTURACIÓN (CUU Realizar facturación)
+### ========================================
+### Primero iniciar sesión (ver src/usuario/usuario.http) y reemplazar {{token}}.
+
+### 1. Facturar una venta concretada (admin o vendedor)
+# La venta pasa a "facturada". Responde 409 si no está concretada o si ya tiene factura.
+POST http://localhost:3000/ventas/ID_DE_LA_VENTA/facturar
+Authorization: Bearer {{token}}
+
+### Respuesta exitosa (201):
+# {
+#   "message": "Venta facturada",
+#   "data": {
+#     "id": "...",
+#     "numero": "0001-00000001",
+#     "fechaEmision": "2026-11-25T00:00:00.000Z",
+#     "venta": "ID_DE_LA_VENTA",
+#     "cliente": "ID_DEL_CLIENTE",
+#     "emitidaPor": "marta",
+#     "receptor": { "nombre": "Juan Pérez", "dni": "25111222", "razonSocial": "...", "direccion": "...", "localidad": "Rosario", "mail": "..." },
+#     "lineas": [{ "descripcion": "Tractor 120 HP", "cantidad": 1, "precioUnitario": 45000000, "importe": 45000000 }],
+#     "subtotal": 45000000, "alicuotaIva": 21, "iva": 9450000, "total": 54450000
+#   }
+# }
+
+### 2. La factura de una venta (el cliente solo ve las de sus compras)
+GET http://localhost:3000/ventas/ID_DE_LA_VENTA/factura
+Authorization: Bearer {{token}}
+
+### 3. Listar facturas (admin y vendedor ven todas; el cliente, solo las suyas)
+GET http://localhost:3000/facturas
+Authorization: Bearer {{token}}
+
+### 4. Filtrar por cliente y por rango de fecha de emisión (AAAA-MM-DD)
+GET http://localhost:3000/facturas?clienteId=ID_DEL_CLIENTE&desde=2026-11-01&hasta=2026-11-30
+Authorization: Bearer {{token}}
+
+### 5. Detalle de una factura
+GET http://localhost:3000/facturas/ID_DE_LA_FACTURA
+Authorization: Bearer {{token}}
