@@ -4,6 +4,8 @@ App backend desarrollada para la facultad UTN en la materia de Desarrollo de Sof
 
 Sistema de gestión de relaciones con clientes (CRM) con autenticación JWT, roles basados en acceso, validación de datos y filtros avanzados.
 
+**App desplegada:** https://pauny-crm.vercel.app (API: https://pauny-crm-api.vercel.app) · **Documentación del proyecto** (usuarios de prueba, casos de uso, API, tests, minutas): [repo del grupo](https://github.com/miltonsark/TP-DSW-COM-304-Dominio-Sarkissian/blob/main/docs/README.md)
+
 ---
 
 ## Inicio Rápido
@@ -19,7 +21,7 @@ Sistema de gestión de relaciones con clientes (CRM) con autenticación JWT, rol
 #### 1 Clonar el repositorio
 
 ```bash
-git clone https://github.com/Ignacioramirez98/Tp-Dsw-BackEnd.git
+git clone https://github.com/miltonsark/Tp-Dsw-BackEnd.git
 cd Tp-Dsw-BackEnd
 ```
 
@@ -131,12 +133,12 @@ src/
 ### Login
 
 ```bash
-POST http://localhost:3000/clientes/login
+POST http://localhost:3000/usuarios/login
 Content-Type: application/json
 
 {
-  "usuario": "testuser",
-  "contraseña": "password123"
+  "usuario": "admin",
+  "contraseña": "admin123"
 }
 ```
 
@@ -146,8 +148,7 @@ Content-Type: application/json
 {
   "message": "Login exitoso",
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "clienteId": "ObjectId(...)",
-  "rol": "cliente"
+  "data": { "usuarioId": "...", "usuario": "admin", "rol": "admin" }
 }
 ```
 
@@ -165,8 +166,7 @@ Authorization: Bearer <token>
 
 ### Clientes
 
-- `POST /clientes` - Registrar nuevo cliente
-- `POST /clientes/login` - Autenticar cliente
+- `POST /clientes` - Registrar nuevo cliente (público)
 - `GET /clientes` - Listar clientes (con filtros opcionales)
 - `GET /clientes/:id` - Obtener detalles de cliente
 - `PUT /clientes/:id` - Actualizar cliente
